@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { Job, JobStatus, BulkImportJob } from '@/lib/types';
 import { CreateJobFormData } from '@/lib/validations';
 import { JobList } from '@/components/job-list';
@@ -10,6 +11,7 @@ import PlusIcon from '@heroicons/react/24/outline/PlusIcon';
 import CloudArrowUpIcon from '@heroicons/react/24/outline/CloudArrowUpIcon';
 import TrashIcon from '@heroicons/react/24/outline/TrashIcon';
 import DocumentTextIcon from '@heroicons/react/24/outline/DocumentTextIcon';
+import ArrowRightOnRectangleIcon from '@heroicons/react/24/outline/ArrowRightOnRectangleIcon';
 import { ErrorMessage } from '@/components/error-message';
 import { LoadingSpinner } from '@/components/loading-spinner';
 
@@ -41,6 +43,9 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [loadingOperation, setLoadingOperation] = useState<string | null>(null);
   const [analyzingJobId, setAnalyzingJobId] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
+  const router = useRouter();
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -73,13 +78,32 @@ export default function Home() {
     await Promise.all([fetchJobs(), fetchStats()]);
   }, [fetchJobs, fetchStats]);
 
+  const checkAuth = useCallback(async () => {
+    try {
+      const response = await fetch('/api/jobs/stats');
+      if (response.status === 401) {
+        router.push('/login');
+        return false;
+      }
+      return response.ok;
+    } catch {
+      router.push('/login');
+      return false;
+    }
+  }, [router]);
+
   useEffect(() => {
-    const loadData = async () => {
-      await refreshData();
+    const initAuth = async () => {
+      const authenticated = await checkAuth();
+      if (authenticated) {
+        setIsAuthenticated(true);
+        await refreshData();
+      }
+      setAuthChecking(false);
       setIsLoading(false);
     };
-    loadData();
-  }, [refreshData]);
+    initAuth();
+  }, [refreshData, checkAuth]);
 
   const handleSubmitJob = useCallback(async (data: CreateJobFormData) => {
     setIsSubmitting(true);
@@ -234,12 +258,30 @@ export default function Home() {
     }
   }, [refreshData]);
 
-  if (isLoading) {
+  const handleLogout = useCallback(async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        window.location.href = '/login';
+      }
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  }, []);
+
+  if (authChecking || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <LoadingSpinner size="lg" message="Loading your job applications..." />
+        <LoadingSpinner size="lg" message={authChecking ? "Checking authentication..." : "Loading your job applications..."} />
       </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will redirect to login
   }
 
   return (
@@ -250,7 +292,17 @@ export default function Home() {
             <h1 className="text-3xl font-bold text-gray-900">Job Tracker</h1>
             <p className="text-gray-600 mt-2">Track your job applications and career journey</p>
           </div>
-          <div className="flex gap-3">
+          
+          <button
+            onClick={handleLogout}
+            className="text-gray-500 hover:text-gray-700 p-2 rounded-md hover:bg-gray-100 transition-colors"
+            title="Logout"
+          >
+            <ArrowRightOnRectangleIcon className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <div className="flex justify-end gap-3 mb-6">
             {jobs.length > 0 && (
               <button
                 onClick={handleClearAllJobs}
@@ -282,7 +334,6 @@ export default function Home() {
               <PlusIcon className="h-4 w-4" />
               Add Job
             </button>
-          </div>
         </div>
 
         {error && (

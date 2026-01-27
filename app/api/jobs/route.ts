@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getAllJobs, createJob } from '@/lib/jobs';
 import { CreateJobSchema } from '@/lib/validations';
+import { withAuth } from '@/lib/auth';
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as 'APPLIED' | 'INTERVIEWING' | 'ACCEPTED' | 'REJECTED' | null;
@@ -12,9 +13,9 @@ export async function GET(request: Request) {
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   try {
     const body = await request.json();
     
@@ -31,4 +32,4 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: 'Failed to create job' }, { status: 500 });
   }
-}
+});
