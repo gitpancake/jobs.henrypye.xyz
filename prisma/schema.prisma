@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum JobStatus {
+  APPLIED
+  INTERVIEWING
+  ACCEPTED
+  REJECTED
+}
+
+model Job {
+  id                    String     @id @default(cuid())
+  title                 String
+  company               String
+  description           String?
+  location              String?
+  applicationDate       DateTime   @default(now())
+  status                JobStatus  @default(APPLIED)
+  linkedinContactUrl    String?
+  linkedinContactName   String?
+  hasMessagedContact    Boolean    @default(false)
+  notes                 String?
+  
+  // AI Analysis Fields
+  salaryMin             Int?
+  salaryMax             Int?
+  salaryCurrency        String?
+  responsibilities      String[]   @default([])
+  requirements          String[]   @default([])
+  benefits              String[]   @default([])
+  workArrangement       String?    // remote/hybrid/onsite
+  suitabilityScore      Int?       // 0-100
+  suitabilityReason     String?
+  aiAnalyzedAt          DateTime?
+  
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  @@map("jobs")
+}
+
+model UserCV {
+  id          String   @id @default(cuid())
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("user_cv")
+}
