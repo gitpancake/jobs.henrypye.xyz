@@ -54,14 +54,29 @@ export const POST = withAuth(async (
   } catch (error) {
     console.error('AI analysis failed:', error);
     
-    if (error instanceof Error && error.message.includes('ANTHROPIC_API_KEY')) {
-      return NextResponse.json({ 
-        error: 'AI service not configured. Please add your Anthropic API key.' 
-      }, { status: 500 });
+    // Handle specific Prisma errors
+    if (error instanceof Error) {
+      if (error.message.includes('ANTHROPIC_API_KEY')) {
+        return NextResponse.json({ 
+          error: 'AI service not configured. Please add your Anthropic API key.' 
+        }, { status: 500 });
+      }
+      
+      if (error.message.includes('connection pool') || error.message.includes('Timed out')) {
+        return NextResponse.json({ 
+          error: 'Database connection timeout. Please try again in a moment.' 
+        }, { status: 503 });
+      }
+      
+      if (error.message.includes('P2024')) {
+        return NextResponse.json({ 
+          error: 'Database connection pool exhausted. Please try again.' 
+        }, { status: 503 });
+      }
     }
     
     return NextResponse.json({ 
-      error: 'Failed to analyze job description' 
+      error: 'Failed to analyze job description. Please try again.' 
     }, { status: 500 });
   }
 });
