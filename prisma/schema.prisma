@@ -38,6 +38,7 @@ model Job {
   workArrangement       String?    // remote/hybrid/onsite
   suitabilityScore      Int?       // 0-100
   suitabilityReason     String?
+  suggestedNextSteps    String[]   @default([])
   aiAnalyzedAt          DateTime?
   
   createdAt            DateTime   @default(now())

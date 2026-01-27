@@ -23,6 +23,7 @@ export interface Job {
   workArrangement?: string | null;
   suitabilityScore?: number | null;
   suitabilityReason?: string | null;
+  suggestedNextSteps: string[];
   aiAnalyzedAt?: Date | null;
   
   createdAt: Date;
@@ -71,4 +72,5 @@ export interface AIAnalysisResult {
   workArrangement?: string;
   suitabilityScore?: number;
   suitabilityReason?: string;
+  suggestedNextSteps: string[];
 }

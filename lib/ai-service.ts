@@ -58,7 +58,9 @@ Extract the following information in JSON format. Use null for any field where i
   "workArrangement": string | null ("remote" | "hybrid" | "onsite")${
     cvContent ? `,
   "suitabilityScore": number (0-100, based on CV match),
-  "suitabilityReason": string (brief explanation of score)` : ''
+  "suitabilityReason": string (brief explanation of score),
+  "suggestedNextSteps": string[] (3-5 actionable, specific steps for this application based on job requirements and candidate background)` : `,
+  "suggestedNextSteps": string[] (3-5 actionable steps for applying to this role)`
   }
 }
 
@@ -68,6 +70,12 @@ IMPORTANT RULES:
 - Only include requirements that are explicitly mentioned as needed skills/experience
 - For work arrangement, only specify if clearly stated (phrases like "remote", "fully distributed", "office-based")
 - Be conservative - prefer null over guessing
+- For suggestedNextSteps, provide 3-5 specific, actionable steps based on this exact role and company, such as:
+  * Research specific company initiatives or recent news
+  * Prepare for specific technical areas mentioned in requirements
+  * Highlight relevant experience that matches key responsibilities
+  * Network with specific types of employees at the company
+  * Tailor application materials to address key job requirements
 `;
 
   if (cvContent) {
@@ -84,7 +92,14 @@ Score how well this candidate matches the role based on:
 - Technical skills match
 - Industry/domain relevance
 
-Provide a score from 0-100 and a brief 1-2 sentence explanation.`;
+Provide a score from 0-100 and a brief 1-2 sentence explanation.
+
+For suggestedNextSteps, provide personalized, actionable steps based on:
+- Specific job requirements and how the candidate should address them
+- Skills gaps that need highlighting or bridging
+- Company research tasks specific to this organization
+- Interview preparation focused on this role's key areas
+- Application strategy based on the role level and requirements`;
   }
 
   return basePrompt;
@@ -111,6 +126,7 @@ function parseAnalysisResponse(response: string): AIAnalysisResult {
       workArrangement: parsed.workArrangement || null,
       suitabilityScore: parsed.suitabilityScore || null,
       suitabilityReason: parsed.suitabilityReason || null,
+      suggestedNextSteps: Array.isArray(parsed.suggestedNextSteps) ? parsed.suggestedNextSteps : [],
     };
   } catch (error) {
     console.error('Failed to parse AI response:', error);

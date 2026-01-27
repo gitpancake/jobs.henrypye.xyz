@@ -42,6 +42,7 @@ export const POST = withAuth(async (
         workArrangement: analysis.workArrangement,
         suitabilityScore: analysis.suitabilityScore,
         suitabilityReason: analysis.suitabilityReason,
+        suggestedNextSteps: analysis.suggestedNextSteps,
         aiAnalyzedAt: new Date(),
       }
     });

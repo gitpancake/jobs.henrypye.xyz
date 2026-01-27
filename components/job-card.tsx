@@ -1,12 +1,14 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { format } from 'date-fns';
 import { Job, JobStatus } from '@/lib/types';
 import PencilIcon from '@heroicons/react/24/outline/PencilIcon';
 import TrashIcon from '@heroicons/react/24/outline/TrashIcon';
 import ArrowTopRightOnSquareIcon from '@heroicons/react/24/outline/ArrowTopRightOnSquareIcon';
 import SparklesIcon from '@heroicons/react/24/outline/SparklesIcon';
+import ChevronDownIcon from '@heroicons/react/24/outline/ChevronDownIcon';
+import ChevronRightIcon from '@heroicons/react/24/outline/ChevronRightIcon';
 
 interface JobCardProps {
   job: Job;
@@ -34,6 +36,9 @@ export const JobCard = memo(function JobCard({
   onAnalyze,
   isAnalyzing = false
 }: JobCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasAIAnalysis = job.aiAnalyzedAt && (job.suitabilityReason || job.requirements?.length > 0 || job.responsibilities?.length > 0 || job.benefits?.length > 0 || job.suggestedNextSteps?.length > 0);
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
@@ -44,13 +49,23 @@ export const JobCard = memo(function JobCard({
               {job.status.replace('_', ' ')}
             </span>
             {job.suitabilityScore !== null && job.suitabilityScore !== undefined && (
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                job.suitabilityScore >= 80 ? 'bg-green-100 text-green-800' :
-                job.suitabilityScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
-              }`}>
+              <button
+                onClick={() => hasAIAnalysis && setIsExpanded(!isExpanded)}
+                className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
+                  job.suitabilityScore >= 80 ? 'bg-green-100 text-green-800' :
+                  job.suitabilityScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                } ${hasAIAnalysis ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
+                disabled={!hasAIAnalysis}
+                aria-label={hasAIAnalysis ? `${isExpanded ? 'Hide' : 'Show'} AI analysis details` : 'AI analysis unavailable'}
+              >
                 {job.suitabilityScore}% Match
-              </span>
+                {hasAIAnalysis && (
+                  isExpanded ? 
+                    <ChevronDownIcon className="h-3 w-3" aria-hidden="true" /> : 
+                    <ChevronRightIcon className="h-3 w-3" aria-hidden="true" />
+                )}
+              </button>
             )}
           </div>
           
@@ -105,6 +120,90 @@ export const JobCard = memo(function JobCard({
           
           {job.notes && (
             <p className="text-gray-600 text-sm mt-2 italic">{job.notes}</p>
+          )}
+
+          {isExpanded && hasAIAnalysis && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">AI Analysis Details</h4>
+              
+              {job.suitabilityReason && (
+                <div className="mb-4">
+                  <h5 className="text-sm font-medium text-gray-700 mb-1">Match Reasoning</h5>
+                  <p className="text-sm text-gray-600 leading-relaxed">{job.suitabilityReason}</p>
+                </div>
+              )}
+
+              {job.requirements && job.requirements.length > 0 && (
+                <div className="mb-4">
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">Key Requirements</h5>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {job.requirements.slice(0, 5).map((req, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="w-1 h-1 bg-gray-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                        {req}
+                      </li>
+                    ))}
+                    {job.requirements.length > 5 && (
+                      <li className="text-xs text-gray-500 italic">+{job.requirements.length - 5} more...</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {job.responsibilities && job.responsibilities.length > 0 && (
+                <div className="mb-4">
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">Key Responsibilities</h5>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {job.responsibilities.slice(0, 3).map((resp, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="w-1 h-1 bg-gray-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                        {resp}
+                      </li>
+                    ))}
+                    {job.responsibilities.length > 3 && (
+                      <li className="text-xs text-gray-500 italic">+{job.responsibilities.length - 3} more...</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {job.benefits && job.benefits.length > 0 && (
+                <div className="mb-4">
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">Benefits & Perks</h5>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {job.benefits.slice(0, 3).map((benefit, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="w-1 h-1 bg-gray-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                        {benefit}
+                      </li>
+                    ))}
+                    {job.benefits.length > 3 && (
+                      <li className="text-xs text-gray-500 italic">+{job.benefits.length - 3} more...</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {job.suggestedNextSteps && job.suggestedNextSteps.length > 0 && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <h5 className="text-sm font-medium text-blue-900 mb-2">Suggested Next Steps</h5>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    {job.suggestedNextSteps.map((step, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="text-blue-600 mr-2">•</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                    {job.linkedinContactName && !job.hasMessagedContact && (
+                      <li className="flex items-start">
+                        <span className="text-blue-600 mr-2">•</span>
+                        <span>Message {job.linkedinContactName} on LinkedIn to express interest</span>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
           )}
         </div>
         
