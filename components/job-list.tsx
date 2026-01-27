@@ -17,7 +17,7 @@ interface JobListProps {
 const statusOptions: JobStatus[] = ['APPLIED', 'INTERVIEWING', 'ACCEPTED', 'REJECTED'];
 
 export function JobList({ jobs, onEdit, onDelete, onStatusChange, onAnalyze, analyzingJobId }: JobListProps) {
-  const [filter, setFilter] = useState<JobStatus | 'ALL'>('ALL');
+  const [filter, setFilter] = useState<JobStatus | 'ALL'>('APPLIED');
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredJobs = useMemo(() => {
