@@ -10,10 +10,10 @@ export async function GET() {
       status: 'success', 
       message: 'Database connection successful',
       env: {
-        hasPoolerUrl: !!process.env.POSTGRES_POOLER_URL,
-        hasDatabaseUrl: !!process.env.DATABASE_URL,
-        poolerPrefix: process.env.POSTGRES_POOLER_URL ? process.env.POSTGRES_POOLER_URL.substring(0, 20) + '...' : 'Not set',
-        databasePrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + '...' : 'Not set'
+        hasPrismaUrl: !!process.env.POSTGRES_PRISMA_URL,
+        hasNonPoolingUrl: !!process.env.POSTGRES_URL_NON_POOLING,
+        prismaPrefix: process.env.POSTGRES_PRISMA_URL ? process.env.POSTGRES_PRISMA_URL.substring(0, 20) + '...' : 'Not set',
+        nonPoolingPrefix: process.env.POSTGRES_URL_NON_POOLING ? process.env.POSTGRES_URL_NON_POOLING.substring(0, 20) + '...' : 'Not set'
       }
     });
   } catch (error) {
@@ -23,10 +23,10 @@ export async function GET() {
       message: 'Database connection failed',
       error: error instanceof Error ? error.message : 'Unknown error',
       env: {
-        hasPoolerUrl: !!process.env.POSTGRES_POOLER_URL,
-        hasDatabaseUrl: !!process.env.DATABASE_URL,
-        poolerPrefix: process.env.POSTGRES_POOLER_URL ? process.env.POSTGRES_POOLER_URL.substring(0, 20) + '...' : 'Not set',
-        databasePrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + '...' : 'Not set'
+        hasPrismaUrl: !!process.env.POSTGRES_PRISMA_URL,
+        hasNonPoolingUrl: !!process.env.POSTGRES_URL_NON_POOLING,
+        prismaPrefix: process.env.POSTGRES_PRISMA_URL ? process.env.POSTGRES_PRISMA_URL.substring(0, 20) + '...' : 'Not set',
+        nonPoolingPrefix: process.env.POSTGRES_URL_NON_POOLING ? process.env.POSTGRES_URL_NON_POOLING.substring(0, 20) + '...' : 'Not set'
       }
     }, { status: 500 });
   }
