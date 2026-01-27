@@ -45,7 +45,23 @@ export function JobList({ jobs, onEdit, onDelete, onStatusChange, onAnalyze, ana
       });
     }
     
-    return filtered;
+    // Sort jobs: AI analyzed first (by suitability score), then others (by date)
+    return filtered.sort((a, b) => {
+      const aHasAI = a.aiAnalyzedAt !== null && a.suitabilityScore !== null;
+      const bHasAI = b.aiAnalyzedAt !== null && b.suitabilityScore !== null;
+      
+      // If both have AI analysis, sort by suitability score (higher first)
+      if (aHasAI && bHasAI) {
+        return (b.suitabilityScore || 0) - (a.suitabilityScore || 0);
+      }
+      
+      // If only one has AI analysis, prioritize it
+      if (aHasAI && !bHasAI) return -1;
+      if (!aHasAI && bHasAI) return 1;
+      
+      // If neither has AI analysis, sort by application date (most recent first)
+      return new Date(b.applicationDate).getTime() - new Date(a.applicationDate).getTime();
+    });
   }, [jobs, filter, searchQuery]);
 
   return (
