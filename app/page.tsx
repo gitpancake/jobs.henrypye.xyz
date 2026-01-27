@@ -12,6 +12,7 @@ import CloudArrowUpIcon from '@heroicons/react/24/outline/CloudArrowUpIcon';
 import TrashIcon from '@heroicons/react/24/outline/TrashIcon';
 import DocumentTextIcon from '@heroicons/react/24/outline/DocumentTextIcon';
 import ArrowRightOnRectangleIcon from '@heroicons/react/24/outline/ArrowRightOnRectangleIcon';
+import SparklesIcon from '@heroicons/react/24/outline/SparklesIcon';
 import { ErrorMessage } from '@/components/error-message';
 import { LoadingSpinner } from '@/components/loading-spinner';
 
@@ -272,6 +273,37 @@ export default function Home() {
     }
   }, []);
 
+  const handleBatchAnalyze = useCallback(async () => {
+    if (!confirm('This will analyze all jobs with descriptions using AI. This may take several minutes and use API credits. Continue?')) {
+      return;
+    }
+
+    setLoadingOperation('batch-analyze');
+    setError(null);
+    try {
+      const response = await fetch('/api/jobs/batch-analyze', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to run batch analysis');
+      }
+      
+      // Show success message
+      alert(`${data.message}\n\nAnalyzed: ${data.analyzed}\nErrors: ${data.errors || 0}\nTotal: ${data.total}`);
+      
+      // Refresh data to show updated analysis
+      await refreshData();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to run batch analysis. Please try again.');
+      console.error('Failed to run batch analysis:', error);
+    } finally {
+      setLoadingOperation(null);
+    }
+  }, [refreshData]);
+
   if (authChecking || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -320,6 +352,19 @@ export default function Home() {
               <DocumentTextIcon className="h-4 w-4" />
               Manage CV
             </button>
+            {jobs.filter(job => job.description && !job.aiAnalyzedAt).length > 0 && (
+              <button
+                onClick={handleBatchAnalyze}
+                disabled={loadingOperation === 'batch-analyze'}
+                className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <SparklesIcon className="h-4 w-4" />
+                {loadingOperation === 'batch-analyze' 
+                  ? 'Analyzing...' 
+                  : `Analyze All (${jobs.filter(job => job.description && !job.aiAnalyzedAt).length})`
+                }
+              </button>
+            )}
             <button
               onClick={() => setIsBulkImportModalOpen(true)}
               className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center gap-2"
