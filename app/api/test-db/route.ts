@@ -10,8 +10,10 @@ export async function GET() {
       status: 'success', 
       message: 'Database connection successful',
       env: {
-        hasPostgresUrl: !!process.env.POSTGRES_URL,
-        urlPrefix: process.env.POSTGRES_URL ? process.env.POSTGRES_URL.substring(0, 20) + '...' : 'Not set'
+        hasPoolerUrl: !!process.env.POSTGRES_POOLER_URL,
+        hasDatabaseUrl: !!process.env.DATABASE_URL,
+        poolerPrefix: process.env.POSTGRES_POOLER_URL ? process.env.POSTGRES_POOLER_URL.substring(0, 20) + '...' : 'Not set',
+        databasePrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + '...' : 'Not set'
       }
     });
   } catch (error) {
@@ -21,8 +23,10 @@ export async function GET() {
       message: 'Database connection failed',
       error: error instanceof Error ? error.message : 'Unknown error',
       env: {
-        hasPostgresUrl: !!process.env.POSTGRES_URL,
-        urlPrefix: process.env.POSTGRES_URL ? process.env.POSTGRES_URL.substring(0, 20) + '...' : 'Not set'
+        hasPoolerUrl: !!process.env.POSTGRES_POOLER_URL,
+        hasDatabaseUrl: !!process.env.DATABASE_URL,
+        poolerPrefix: process.env.POSTGRES_POOLER_URL ? process.env.POSTGRES_POOLER_URL.substring(0, 20) + '...' : 'Not set',
+        databasePrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + '...' : 'Not set'
       }
     }, { status: 500 });
   }
