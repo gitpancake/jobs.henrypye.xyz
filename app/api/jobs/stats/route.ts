@@ -7,6 +7,10 @@ export const GET = withAuth(async () => {
     const stats = await getJobStats();
     return NextResponse.json(stats);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch job stats' }, { status: 500 });
+    console.error('Job stats error:', error);
+    return NextResponse.json({ 
+      error: 'Failed to fetch job stats',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 });
