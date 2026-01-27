@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { withAuth } from '@/lib/auth';
 
-export async function DELETE() {
+export const DELETE = withAuth(async () => {
   try {
     const result = await prisma.job.deleteMany({});
     
@@ -13,4 +14,4 @@ export async function DELETE() {
     console.error('Failed to clear jobs:', error);
     return NextResponse.json({ error: 'Failed to clear jobs' }, { status: 500 });
   }
-}
+});

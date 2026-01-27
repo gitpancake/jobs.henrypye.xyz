@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { analyzeJobDescription, getUserCV } from '@/lib/ai-service';
+import { withAuth } from '@/lib/auth';
 
-export async function POST(
+export const POST = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const { id: jobId } = await params;
     
@@ -63,4 +64,4 @@ export async function POST(
       error: 'Failed to analyze job description' 
     }, { status: 500 });
   }
-}
+});

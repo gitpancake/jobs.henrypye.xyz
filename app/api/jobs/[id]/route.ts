@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getJobById, updateJob, deleteJob } from '@/lib/jobs';
 import { UpdateJobSchema } from '@/lib/validations';
+import { withAuth } from '@/lib/auth';
 
-export async function GET(
+export const GET = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const { id } = await params;
     const job = await getJobById(id);
@@ -18,12 +19,12 @@ export async function GET(
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch job' }, { status: 500 });
   }
-}
+});
 
-export async function PUT(
+export const PUT = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -41,12 +42,12 @@ export async function PUT(
     }
     return NextResponse.json({ error: 'Failed to update job' }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(
+export const DELETE = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const { id } = await params;
     await deleteJob(id);
@@ -54,4 +55,4 @@ export async function DELETE(
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete job' }, { status: 500 });
   }
-}
+});

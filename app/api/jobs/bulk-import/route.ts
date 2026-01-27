@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { bulkCreateJobs } from '@/lib/jobs';
 import { BulkImportSchema } from '@/lib/validations';
+import { withAuth } from '@/lib/auth';
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   try {
     const body = await request.json();
     
@@ -25,4 +26,4 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: 'Failed to import jobs' }, { status: 500 });
   }
-}
+});

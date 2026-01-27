@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getUserCV, saveUserCV } from '@/lib/ai-service';
+import { withAuth } from '@/lib/auth';
 
-export async function GET() {
+export const GET = withAuth(async () => {
   try {
     const cv = await getUserCV();
     return NextResponse.json({ content: cv });
@@ -9,9 +10,9 @@ export async function GET() {
     console.error('Failed to get CV:', error);
     return NextResponse.json({ error: 'Failed to get CV' }, { status: 500 });
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   try {
     const { content } = await request.json();
     
@@ -25,4 +26,4 @@ export async function POST(request: Request) {
     console.error('Failed to save CV:', error);
     return NextResponse.json({ error: 'Failed to save CV' }, { status: 500 });
   }
-}
+});
