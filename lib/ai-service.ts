@@ -18,7 +18,7 @@ export async function analyzeJobDescription(
   try {
     const response = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307', // Cheap, fast model
-      max_tokens: 1000,
+      max_tokens: 2000, // Increased for longer job descriptions
       messages: [{
         role: 'user',
         content: prompt
@@ -33,7 +33,31 @@ export async function analyzeJobDescription(
     return parseAnalysisResponse(result.text);
   } catch (error) {
     console.error('AI analysis failed:', error);
-    throw new Error('Failed to analyze job description');
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('timeout') || error.message.includes('ECONNRESET')) {
+        throw new Error('AI analysis timed out. Please try again.');
+      }
+      
+      if (error.message.includes('rate_limit')) {
+        throw new Error('AI service rate limit exceeded. Please try again in a moment.');
+      }
+      
+      if (error.message.includes('invalid_api_key')) {
+        throw new Error('AI service configuration error. Please contact support.');
+      }
+      
+      if (error.message.includes('quota_exceeded')) {
+        throw new Error('AI service quota exceeded. Please try again later.');
+      }
+
+      if (error.message.includes('Failed to parse')) {
+        throw new Error('AI analysis returned invalid data. Please try again.');
+      }
+    }
+    
+    throw new Error('AI service temporarily unavailable. Please try again.');
   }
 }
 
@@ -55,13 +79,10 @@ Extract the following information in JSON format. Use null for any field where i
   "responsibilities": string[] (only clear responsibilities listed),
   "requirements": string[] (only explicit requirements/skills),
   "benefits": string[] (only explicit benefits mentioned),
-  "workArrangement": string | null ("remote" | "hybrid" | "onsite")${
-    cvContent ? `,
-  "suitabilityScore": number (0-100, based on CV match),
+  "workArrangement": string | null ("remote" | "hybrid" | "onsite"),
+  "suitabilityScore": number (0-100, ${cvContent ? 'based on CV match' : 'general assessment based on job requirements difficulty'}),
   "suitabilityReason": string (brief explanation of score),
-  "suggestedNextSteps": string[] (3-5 actionable, specific steps for this application based on job requirements and candidate background)` : `,
-  "suggestedNextSteps": string[] (3-5 actionable steps for applying to this role)`
-  }
+  "suggestedNextSteps": string[] (3-5 actionable, specific steps for this application${cvContent ? ' based on job requirements and candidate background' : ' for applying to this role'})
 }
 
 IMPORTANT RULES:
@@ -100,34 +121,93 @@ For suggestedNextSteps, provide personalized, actionable steps based on:
 - Company research tasks specific to this organization
 - Interview preparation focused on this role's key areas
 - Application strategy based on the role level and requirements`;
-  }
+  } else {
+    return basePrompt + `
 
-  return basePrompt;
+For suitabilityScore, provide a general assessment (0-100) based on:
+- How competitive/difficult this role appears to be
+- Level of experience required (entry: 70-85, mid: 50-70, senior: 30-50, executive: 10-30)
+- Technical complexity of requirements
+- Company prestige/competitiveness
+
+For suitabilityReason, explain your scoring rationale in 1-2 sentences focusing on the role's requirements and difficulty level.`;
+  }
 }
 
 function parseAnalysisResponse(response: string): AIAnalysisResult {
   try {
+    // Log the raw response for debugging
+    console.log('Raw AI response:', response);
+
     // Extract JSON from the response (in case there's extra text)
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    let jsonMatch = response.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      console.error('No JSON found in AI response:', response);
       throw new Error('No JSON found in response');
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    let jsonStr = jsonMatch[0];
     
-    // Validate and clean the response
-    return {
-      salaryMin: parsed.salaryMin || null,
-      salaryMax: parsed.salaryMax || null,
-      salaryCurrency: parsed.salaryCurrency || null,
+    // Handle potentially truncated JSON - try to find the last complete field
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (parseError) {
+      console.error('JSON parse error, attempting to fix truncated response:', parseError);
+      
+      // Try to fix truncated JSON by finding the last complete field and closing the object
+      const lastCompleteField = jsonStr.lastIndexOf('",');
+      if (lastCompleteField > 0) {
+        const fixedJson = jsonStr.substring(0, lastCompleteField + 1) + '\n}';
+        console.log('Attempting to parse fixed JSON:', fixedJson);
+        try {
+          parsed = JSON.parse(fixedJson);
+          console.log('Successfully parsed fixed JSON');
+        } catch (fixError) {
+          console.error('Failed to parse fixed JSON:', fixError);
+          throw new Error('Invalid JSON in AI response');
+        }
+      } else {
+        throw new Error('Invalid JSON in AI response');
+      }
+    }
+    
+    // Validate required structure
+    if (typeof parsed !== 'object' || parsed === null) {
+      console.error('Parsed response is not an object:', parsed);
+      throw new Error('AI response structure is invalid');
+    }
+    
+    // Validate and clean the response with fallbacks for missing fields
+    const result: AIAnalysisResult = {
+      salaryMin: typeof parsed.salaryMin === 'number' ? parsed.salaryMin : null,
+      salaryMax: typeof parsed.salaryMax === 'number' ? parsed.salaryMax : null,
+      salaryCurrency: typeof parsed.salaryCurrency === 'string' ? parsed.salaryCurrency : null,
       responsibilities: Array.isArray(parsed.responsibilities) ? parsed.responsibilities : [],
       requirements: Array.isArray(parsed.requirements) ? parsed.requirements : [],
       benefits: Array.isArray(parsed.benefits) ? parsed.benefits : [],
-      workArrangement: parsed.workArrangement || null,
-      suitabilityScore: parsed.suitabilityScore || null,
-      suitabilityReason: parsed.suitabilityReason || null,
+      workArrangement: typeof parsed.workArrangement === 'string' ? parsed.workArrangement : null,
+      suitabilityScore: typeof parsed.suitabilityScore === 'number' ? parsed.suitabilityScore : null,
+      suitabilityReason: typeof parsed.suitabilityReason === 'string' ? parsed.suitabilityReason : null,
       suggestedNextSteps: Array.isArray(parsed.suggestedNextSteps) ? parsed.suggestedNextSteps : [],
     };
+
+    // If critical fields are missing due to truncation, add fallback values
+    if (!result.suitabilityScore && (result.requirements.length > 0 || result.responsibilities.length > 0)) {
+      result.suitabilityScore = 50; // Default middle score if we have job data but score was truncated
+      result.suitabilityReason = 'Analysis was truncated - please re-analyze for complete scoring.';
+    }
+
+    if (result.suggestedNextSteps.length === 0 && (result.requirements.length > 0 || result.responsibilities.length > 0)) {
+      result.suggestedNextSteps = [
+        'Research the company and role requirements',
+        'Tailor your resume to highlight relevant experience',
+        'Prepare for technical discussions around key requirements'
+      ];
+    }
+
+    console.log('Final parsed result:', result);
+    return result;
   } catch (error) {
     console.error('Failed to parse AI response:', error);
     throw new Error('Failed to parse analysis results');

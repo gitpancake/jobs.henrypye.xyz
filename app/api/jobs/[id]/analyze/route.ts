@@ -7,8 +7,9 @@ export const POST = withAuth(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) => {
+  const { id: jobId } = await params;
+  
   try {
-    const { id: jobId } = await params;
     
     // Get the job
     const job = await prisma.job.findUnique({
@@ -54,15 +55,50 @@ export const POST = withAuth(async (
     });
   } catch (error) {
     console.error('AI analysis failed:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      jobId
+    });
     
-    // Handle specific Prisma errors
+    // Handle specific errors
     if (error instanceof Error) {
-      if (error.message.includes('ANTHROPIC_API_KEY')) {
+      // API Key issues
+      if (error.message.includes('ANTHROPIC_API_KEY') || error.message.includes('invalid_api_key')) {
         return NextResponse.json({ 
           error: 'AI service not configured. Please add your Anthropic API key.' 
         }, { status: 500 });
       }
+
+      // Rate limiting
+      if (error.message.includes('rate_limit')) {
+        return NextResponse.json({ 
+          error: 'AI service rate limit exceeded. Please try again in a moment.' 
+        }, { status: 429 });
+      }
+
+      // Quota issues
+      if (error.message.includes('quota_exceeded')) {
+        return NextResponse.json({ 
+          error: 'AI service quota exceeded. Please try again later.' 
+        }, { status: 429 });
+      }
+
+      // Timeout issues
+      if (error.message.includes('timeout') || error.message.includes('ECONNRESET')) {
+        return NextResponse.json({ 
+          error: 'AI analysis timed out. Please try again.' 
+        }, { status: 503 });
+      }
+
+      // Parsing issues  
+      if (error.message.includes('Failed to parse') || error.message.includes('JSON')) {
+        return NextResponse.json({ 
+          error: 'AI analysis returned invalid data. Please try again.' 
+        }, { status: 503 });
+      }
       
+      // Database issues
       if (error.message.includes('connection pool') || error.message.includes('Timed out')) {
         return NextResponse.json({ 
           error: 'Database connection timeout. Please try again in a moment.' 
@@ -72,6 +108,13 @@ export const POST = withAuth(async (
       if (error.message.includes('P2024')) {
         return NextResponse.json({ 
           error: 'Database connection pool exhausted. Please try again.' 
+        }, { status: 503 });
+      }
+
+      // Pass through specific error messages from AI service
+      if (error.message.includes('AI service') || error.message.includes('temporarily unavailable')) {
+        return NextResponse.json({ 
+          error: error.message 
         }, { status: 503 });
       }
     }

@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { Job, JobStatus } from '@/lib/types';
 import PencilIcon from '@heroicons/react/24/outline/PencilIcon';
 import TrashIcon from '@heroicons/react/24/outline/TrashIcon';
+import DocumentDuplicateIcon from '@heroicons/react/24/outline/DocumentDuplicateIcon';
 import ArrowTopRightOnSquareIcon from '@heroicons/react/24/outline/ArrowTopRightOnSquareIcon';
 import SparklesIcon from '@heroicons/react/24/outline/SparklesIcon';
 import ChevronDownIcon from '@heroicons/react/24/outline/ChevronDownIcon';
@@ -14,6 +15,7 @@ interface JobCardProps {
   job: Job;
   onEdit: (job: Job) => void;
   onDelete: (jobId: string) => void;
+  onDuplicate: (job: Job) => void;
   onStatusChange: (jobId: string, status: JobStatus) => void;
   onAnalyze?: (jobId: string) => void;
   isAnalyzing?: boolean;
@@ -31,7 +33,8 @@ const statusOptions: JobStatus[] = ['APPLIED', 'INTERVIEWING', 'ACCEPTED', 'REJE
 export const JobCard = memo(function JobCard({ 
   job, 
   onEdit, 
-  onDelete, 
+  onDelete,
+  onDuplicate,
   onStatusChange,
   onAnalyze,
   isAnalyzing = false
@@ -246,6 +249,14 @@ export const JobCard = memo(function JobCard({
             aria-label={`Edit job application for ${job.title} at ${job.company}`}
           >
             <PencilIcon className="h-4 w-4" aria-hidden="true" />
+          </button>
+
+          <button
+            onClick={() => onDuplicate(job)}
+            className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+            aria-label={`Duplicate job application for ${job.title} at ${job.company}`}
+          >
+            <DocumentDuplicateIcon className="h-4 w-4" aria-hidden="true" />
           </button>
           
           <button

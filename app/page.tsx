@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { Job, JobStatus, BulkImportJob } from '@/lib/types';
@@ -13,8 +13,11 @@ import TrashIcon from '@heroicons/react/24/outline/TrashIcon';
 import DocumentTextIcon from '@heroicons/react/24/outline/DocumentTextIcon';
 import ArrowRightOnRectangleIcon from '@heroicons/react/24/outline/ArrowRightOnRectangleIcon';
 import SparklesIcon from '@heroicons/react/24/outline/SparklesIcon';
+import EyeIcon from '@heroicons/react/24/outline/EyeIcon';
+import EyeSlashIcon from '@heroicons/react/24/outline/EyeSlashIcon';
 import { ErrorMessage } from '@/components/error-message';
 import { LoadingSpinner } from '@/components/loading-spinner';
+import { obfuscateJobs } from '@/lib/obfuscation';
 
 // Dynamic imports for modals - loaded only when needed
 const JobModal = dynamic(() => import('@/components/job-modal').then(mod => ({ default: mod.JobModal })), {
@@ -46,7 +49,14 @@ export default function Home() {
   const [analyzingJobId, setAnalyzingJobId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
+  const [isObfuscated, setIsObfuscated] = useState(false);
+  const [recentlyAnalyzedJobId, setRecentlyAnalyzedJobId] = useState<string | null>(null);
   const router = useRouter();
+
+  // Compute display jobs based on obfuscation state
+  const displayJobs = useMemo(() => {
+    return isObfuscated ? obfuscateJobs(jobs) : jobs;
+  }, [jobs, isObfuscated]);
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -205,9 +215,48 @@ export default function Home() {
   }, [refreshData]);
 
   const handleEditJob = useCallback((job: Job) => {
-    setEditingJob(job);
+    // Find the real job data by ID in case we're editing an obfuscated job
+    const realJob = jobs.find(j => j.id === job.id) || job;
+    setEditingJob(realJob);
     setIsJobModalOpen(true);
-  }, []);
+  }, [jobs]);
+
+  const handleDuplicateJob = useCallback(async (job: Job) => {
+    setError(null);
+    setLoadingOperation(`duplicate-${job.id}`);
+    try {
+      // Find the real job data by ID in case we're duplicating an obfuscated job
+      const realJob = jobs.find(j => j.id === job.id) || job;
+      const duplicateData = {
+        title: realJob.title,
+        company: realJob.company,
+        description: realJob.description,
+        location: realJob.location,
+        applicationDate: new Date(),
+        linkedinContactUrl: realJob.linkedinContactUrl,
+        linkedinContactName: realJob.linkedinContactName,
+        hasMessagedContact: false, // Reset for duplicate
+        notes: realJob.notes ? `Duplicate of original application\n${realJob.notes}` : 'Duplicate of original application',
+      };
+
+      const response = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(duplicateData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to duplicate job');
+      }
+
+      await refreshData();
+    } catch (error) {
+      setError('Failed to duplicate job. Please try again.');
+      console.error('Failed to duplicate job:', error);
+    } finally {
+      setLoadingOperation(null);
+    }
+  }, [jobs, refreshData]);
 
   const handleCloseJobModal = useCallback(() => {
     setIsJobModalOpen(false);
@@ -220,16 +269,47 @@ export default function Home() {
     try {
       const response = await fetch(`/api/jobs/${jobId}/analyze`, {
         method: 'POST',
+        signal: AbortSignal.timeout(120000), // 2 minute timeout
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to analyze job');
+        let errorMessage = 'Failed to analyze job';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If we can't parse error response, use status-based message
+          if (response.status === 503) {
+            errorMessage = 'AI service is temporarily busy. Please try again in a moment.';
+          } else if (response.status === 500) {
+            errorMessage = 'AI analysis failed due to a server error. Please try again.';
+          } else if (response.status === 404) {
+            errorMessage = 'Job not found. Please refresh the page.';
+          } else if (response.status === 400) {
+            errorMessage = 'This job has no description to analyze.';
+          }
+        }
+        throw new Error(errorMessage);
       }
+      
+      // Set as recently analyzed so it stays visible in the no-AI-analysis filter
+      setRecentlyAnalyzedJobId(jobId);
       
       await refreshData();
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to analyze job. Please try again.');
+      let errorMessage = 'Failed to analyze job. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.name === 'TimeoutError' || error.message.includes('timeout')) {
+          errorMessage = 'AI analysis timed out. This job description might be too long. Please try again.';
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.length > 0) {
+          errorMessage = error.message;
+        }
+      }
+      
+      setError(errorMessage);
       console.error('Failed to analyze job:', error);
     } finally {
       setAnalyzingJobId(null);
@@ -271,6 +351,14 @@ export default function Home() {
     } catch (error) {
       console.error('Logout failed:', error);
     }
+  }, []);
+
+  const handleToggleObfuscation = useCallback(() => {
+    setIsObfuscated(prev => !prev);
+  }, []);
+
+  const handleClearRecentlyAnalyzed = useCallback(() => {
+    setRecentlyAnalyzedJobId(null);
   }, []);
 
   const handleBatchAnalyze = useCallback(async () => {
@@ -325,13 +413,27 @@ export default function Home() {
             <p className="text-gray-600 mt-2">Track your job applications and career journey</p>
           </div>
           
-          <button
-            onClick={handleLogout}
-            className="text-gray-500 hover:text-gray-700 p-2 rounded-md hover:bg-gray-100 transition-colors"
-            title="Logout"
-          >
-            <ArrowRightOnRectangleIcon className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleToggleObfuscation}
+              className="text-gray-500 hover:text-gray-700 p-2 rounded-md hover:bg-gray-100 transition-colors"
+              title={isObfuscated ? "Show real data" : "Obfuscate data for screenshots"}
+            >
+              {isObfuscated ? (
+                <EyeIcon className="h-5 w-5" />
+              ) : (
+                <EyeSlashIcon className="h-5 w-5" />
+              )}
+            </button>
+            
+            <button
+              onClick={handleLogout}
+              className="text-gray-500 hover:text-gray-700 p-2 rounded-md hover:bg-gray-100 transition-colors"
+              title="Logout"
+            >
+              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+            </button>
+          </div>
         </div>
         
         <div className="flex justify-end gap-3 mb-6">
@@ -388,12 +490,15 @@ export default function Home() {
         <JobStats stats={stats} />
 
         <JobList
-          jobs={jobs}
+          jobs={displayJobs}
           onEdit={handleEditJob}
           onDelete={handleDeleteJob}
+          onDuplicate={handleDuplicateJob}
           onStatusChange={handleStatusChange}
           onAnalyze={handleAnalyzeJob}
           analyzingJobId={analyzingJobId}
+          recentlyAnalyzedJobId={recentlyAnalyzedJobId}
+          onClearRecentlyAnalyzed={handleClearRecentlyAnalyzed}
         />
 
         <JobModal

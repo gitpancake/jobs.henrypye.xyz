@@ -5,7 +5,7 @@ declare global {
 }
 
 export const prisma = globalThis.prisma || new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
+  log: ['error'],
   datasources: {
     db: {
       url: process.env.POSTGRES_PRISMA_URL,
