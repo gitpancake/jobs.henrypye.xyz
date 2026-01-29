@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     // Extract job information from the description using simple parsing
     // Look for common patterns in job descriptions
-    const lines = description.split('\n').map(line => line.trim()).filter(Boolean);
+    const lines = description.split('\n').map((line: string) => line.trim()).filter(Boolean);
     
     let title = '';
     let company = '';
