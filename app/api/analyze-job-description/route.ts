@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const cvContent = await getUserCV();
     
     // Analyze the job description
-    const analysis = await analyzeJobDescription(description, cvContent);
+    const analysis = await analyzeJobDescription(description, cvContent || undefined);
     
     // Transform the analysis result to match the modal interface
     const result = {
