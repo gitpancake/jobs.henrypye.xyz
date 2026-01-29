@@ -35,12 +35,18 @@ const CVModal = dynamic(() => import('@/components/cv-modal').then(mod => ({ def
   loading: () => <LoadingSpinner size="lg" message="Loading..." />
 });
 
+const JobAnalysisModal = dynamic(() => import('@/components/job-analysis-modal').then(mod => ({ default: mod.JobAnalysisModal })), {
+  ssr: false,
+  loading: () => <LoadingSpinner size="lg" message="Loading..." />
+});
+
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [stats, setStats] = useState({ total: 0, applied: 0, interviewing: 0, accepted: 0, rejected: 0 });
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
   const [isCVModalOpen, setIsCVModalOpen] = useState(false);
+  const [isJobAnalysisModalOpen, setIsJobAnalysisModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -448,6 +454,13 @@ export default function Home() {
               </button>
             )}
             <button
+              onClick={() => setIsJobAnalysisModalOpen(true)}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center gap-2"
+            >
+              <SparklesIcon className="h-4 w-4" />
+              Job Fit Analyzer
+            </button>
+            <button
               onClick={() => setIsCVModalOpen(true)}
               className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 flex items-center gap-2"
             >
@@ -521,6 +534,12 @@ export default function Home() {
         <CVModal
           isOpen={isCVModalOpen}
           onClose={() => setIsCVModalOpen(false)}
+        />
+
+        <JobAnalysisModal
+          isOpen={isJobAnalysisModalOpen}
+          onClose={() => setIsJobAnalysisModalOpen(false)}
+          onJobCreated={refreshData}
         />
       </div>
     </div>
