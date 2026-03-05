@@ -29,6 +29,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { DashboardContext } from "@/lib/dashboard-context";
 import Link from "next/link";
+import { signOut } from "firebase/auth";
+import { getFirebaseAuth } from "@/lib/firebase";
 
 interface Stats {
   total: number;
@@ -68,10 +70,9 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
   const handleLogout = useCallback(async () => {
     try {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
-      if (response.ok) {
-        window.location.href = "/login";
-      }
+      await fetch("/api/auth/logout", { method: "POST" });
+      await signOut(getFirebaseAuth());
+      window.location.href = "/login";
     } catch (error) {
       console.error("Logout failed:", error);
     }

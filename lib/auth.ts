@@ -1,29 +1,12 @@
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { adminAuth } from './firebase-admin';
 
-const AUTH_COOKIE_NAME = 'job_tracker_auth';
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+const SESSION_COOKIE = 'firebase-token';
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export interface AuthCredentials {
-  username: string;
-  password: string;
-}
-
-export function validateCredentials(credentials: AuthCredentials): boolean {
-  const validUsername = process.env.AUTH_USERNAME;
-  const validPassword = process.env.AUTH_PASSWORD;
-  
-  if (!validUsername || !validPassword) {
-    console.error('AUTH_USERNAME or AUTH_PASSWORD not configured');
-    return false;
-  }
-  
-  return credentials.username === validUsername && credentials.password === validPassword;
-}
-
-export async function setAuthCookie(): Promise<void> {
+export async function setAuthCookie(idToken: string): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(AUTH_COOKIE_NAME, 'authenticated', {
+  cookieStore.set(SESSION_COOKIE, idToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -34,14 +17,16 @@ export async function setAuthCookie(): Promise<void> {
 
 export async function clearAuthCookie(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete(AUTH_COOKIE_NAME);
+  cookieStore.delete(SESSION_COOKIE);
 }
 
 export async function isAuthenticated(): Promise<boolean> {
   try {
     const cookieStore = await cookies();
-    const authCookie = cookieStore.get(AUTH_COOKIE_NAME);
-    return authCookie?.value === 'authenticated';
+    const token = cookieStore.get(SESSION_COOKIE)?.value;
+    if (!token) return false;
+    await adminAuth.verifyIdToken(token);
+    return true;
   } catch {
     return false;
   }
@@ -60,20 +45,4 @@ export function withAuth(
     }
     return handler(request, context);
   };
-}
-
-export function checkAuthMiddleware(request: NextRequest): NextResponse | null {
-  // Skip auth check for login/logout routes and API auth
-  if (request.nextUrl.pathname.startsWith('/api/auth') || 
-      request.nextUrl.pathname === '/login') {
-    return null;
-  }
-  
-  const authCookie = request.cookies.get(AUTH_COOKIE_NAME);
-  
-  if (!authCookie || authCookie.value !== 'authenticated') {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-  
-  return null;
 }

@@ -1,34 +1,26 @@
 import { NextResponse } from 'next/server';
-import { validateCredentials, setAuthCookie } from '@/lib/auth';
+import { adminAuth } from '@/lib/firebase-admin';
+import { setAuthCookie } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
-    const { username, password } = await request.json();
-    
-    if (!username || !password) {
+    const { idToken } = await request.json();
+
+    if (!idToken) {
       return NextResponse.json(
-        { error: 'Username and password are required' }, 
+        { error: 'Missing token' },
         { status: 400 }
       );
     }
-    
-    const isValid = validateCredentials({ username, password });
-    
-    if (!isValid) {
-      return NextResponse.json(
-        { error: 'Invalid username or password' }, 
-        { status: 401 }
-      );
-    }
-    
-    await setAuthCookie();
-    
+
+    await adminAuth.verifyIdToken(idToken);
+    await setAuthCookie(idToken);
+
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch {
     return NextResponse.json(
-      { error: 'Login failed' }, 
-      { status: 500 }
+      { error: 'Invalid token' },
+      { status: 401 }
     );
   }
 }
