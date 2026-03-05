@@ -63,14 +63,14 @@ export default function InsightsPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-amber-500" />
+            <Lightbulb className="h-5 w-5 text-primary" />
             Rejection Insights
           </CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-12">
-              <Sparkles className="h-8 w-8 text-purple-600 animate-spin mb-4" />
+              <Sparkles className="h-8 w-8 text-primary animate-spin mb-4" />
               <p className="text-foreground font-medium">
                 Analyzing your rejected applications...
               </p>
@@ -82,7 +82,7 @@ export default function InsightsPage() {
 
           {error && (
             <div className="space-y-4">
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
                 <p className="text-destructive text-sm">{error}</p>
               </div>
               <Button onClick={fetchInsights}>Try Again</Button>
@@ -93,10 +93,10 @@ export default function InsightsPage() {
 
       {insights && (
         <div className="space-y-6">
-          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-0">
+          <Card className="bg-muted border-0">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-3">
-                <Lightbulb className="h-5 w-5 text-amber-600" />
+                <Lightbulb className="h-5 w-5 text-primary" />
                 <h3 className="text-lg font-semibold text-foreground">
                   Summary
                 </h3>
@@ -111,12 +111,12 @@ export default function InsightsPage() {
           </Card>
 
           {insights.commonRequirements.length > 0 && (
-            <Card className="bg-blue-50 border-0">
+            <Card className="border-l-2 border-l-primary">
               <CardContent className="p-4">
-                <h4 className="font-semibold text-blue-800 mb-3">
+                <h4 className="font-semibold text-foreground mb-3">
                   Most Common Requirements
                 </h4>
-                <p className="text-xs text-blue-600 mb-3">
+                <p className="text-xs text-muted-foreground mb-3">
                   Skills and qualifications that appeared most frequently across
                   your rejected roles
                 </p>
@@ -124,9 +124,9 @@ export default function InsightsPage() {
                   {insights.commonRequirements.map((req, index) => (
                     <li
                       key={index}
-                      className="text-sm text-blue-700 flex items-start"
+                      className="text-sm text-muted-foreground flex items-start"
                     >
-                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0" />
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 mr-2 flex-shrink-0" />
                       {req}
                     </li>
                   ))}
@@ -136,12 +136,12 @@ export default function InsightsPage() {
           )}
 
           {insights.skillGaps.length > 0 && (
-            <Card className="bg-orange-50 border-0">
+            <Card className="border-l-2 border-l-orange-500">
               <CardContent className="p-4">
-                <h4 className="font-semibold text-orange-800 mb-3">
+                <h4 className="font-semibold text-foreground mb-3">
                   Likely Skill Gaps
                 </h4>
-                <p className="text-xs text-orange-600 mb-3">
+                <p className="text-xs text-muted-foreground mb-3">
                   Areas where your profile may not match what these roles were
                   looking for
                 </p>
@@ -149,7 +149,7 @@ export default function InsightsPage() {
                   {insights.skillGaps.map((gap, index) => (
                     <li
                       key={index}
-                      className="text-sm text-orange-700 flex items-start"
+                      className="text-sm text-muted-foreground flex items-start"
                     >
                       <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0" />
                       {gap}
@@ -161,18 +161,18 @@ export default function InsightsPage() {
           )}
 
           {insights.patterns.length > 0 && (
-            <Card className="bg-purple-50 border-0">
+            <Card className="border-l-2 border-l-violet-500">
               <CardContent className="p-4">
-                <h4 className="font-semibold text-purple-800 mb-3">
+                <h4 className="font-semibold text-foreground mb-3">
                   Patterns Noticed
                 </h4>
                 <ul className="space-y-1">
                   {insights.patterns.map((pattern, index) => (
                     <li
                       key={index}
-                      className="text-sm text-purple-700 flex items-start"
+                      className="text-sm text-muted-foreground flex items-start"
                     >
-                      <span className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 mr-2 flex-shrink-0" />
+                      <span className="w-1.5 h-1.5 bg-violet-500 rounded-full mt-2 mr-2 flex-shrink-0" />
                       {pattern}
                     </li>
                   ))}
@@ -182,21 +182,21 @@ export default function InsightsPage() {
           )}
 
           {insights.recommendations.length > 0 && (
-            <Card className="bg-green-50 border-0">
+            <Card className="border-l-2 border-l-green-600">
               <CardContent className="p-4">
-                <h4 className="font-semibold text-green-800 mb-3">
+                <h4 className="font-semibold text-foreground mb-3">
                   Recommendations
                 </h4>
-                <p className="text-xs text-green-600 mb-3">
+                <p className="text-xs text-muted-foreground mb-3">
                   Actionable steps to improve your success rate
                 </p>
                 <ul className="space-y-2">
                   {insights.recommendations.map((rec, index) => (
                     <li
                       key={index}
-                      className="text-sm text-green-700 flex items-start"
+                      className="text-sm text-muted-foreground flex items-start"
                     >
-                      <span className="text-green-600 mr-2 font-medium">
+                      <span className="text-foreground mr-2 font-medium">
                         {index + 1}.
                       </span>
                       <span>{rec}</span>

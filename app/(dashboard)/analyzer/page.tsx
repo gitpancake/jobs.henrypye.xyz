@@ -124,7 +124,7 @@ export default function AnalyzerPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-600" />
+            <Sparkles className="h-5 w-5 text-primary" />
             Job Fit Analyzer
           </CardTitle>
         </CardHeader>
@@ -156,7 +156,7 @@ export default function AnalyzerPage() {
                 variant="outline"
                 onClick={handleCreateJob}
                 disabled={isCreatingJob}
-                className="text-green-700 border-green-300 hover:bg-green-50"
+                className="text-green-700 border-green-700/30 hover:bg-green-500/10"
               >
                 <Plus />
                 {isCreatingJob ? "Adding..." : "I've Applied"}
@@ -171,7 +171,7 @@ export default function AnalyzerPage() {
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
               <p className="text-destructive text-sm">{error}</p>
             </div>
           )}
@@ -180,11 +180,11 @@ export default function AnalyzerPage() {
 
       {analysis && (
         <div className="space-y-6">
-          <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-0">
+          <Card className="bg-muted border-0">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-purple-600" />
+                  <BarChart3 className="h-5 w-5 text-primary" />
                   <h3 className="text-lg font-semibold text-foreground">
                     Job Fit Score
                   </h3>
@@ -192,10 +192,10 @@ export default function AnalyzerPage() {
                 <div
                   className={`text-2xl font-bold px-3 py-1 rounded-full ${
                     analysis.suitabilityScore >= 80
-                      ? "bg-green-100 text-green-800"
+                      ? "bg-green-500/10 text-green-700"
                       : analysis.suitabilityScore >= 60
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
+                        ? "bg-yellow-500/10 text-yellow-700"
+                        : "bg-destructive/10 text-destructive"
                   }`}
                 >
                   {analysis.suitabilityScore}%
@@ -206,18 +206,18 @@ export default function AnalyzerPage() {
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="bg-green-50 border-0">
+            <Card className="border-l-2 border-l-green-600">
               <CardContent className="p-4">
-                <h4 className="font-semibold text-green-800 mb-3">
+                <h4 className="font-semibold text-foreground mb-3">
                   Key Matches
                 </h4>
                 <ul className="space-y-1">
                   {analysis.keyMatches.map((match, index) => (
                     <li
                       key={index}
-                      className="text-sm text-green-700 flex items-start"
+                      className="text-sm text-muted-foreground flex items-start"
                     >
-                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 mr-2 flex-shrink-0" />
+                      <span className="w-1.5 h-1.5 bg-green-600 rounded-full mt-2 mr-2 flex-shrink-0" />
                       {match}
                     </li>
                   ))}
@@ -225,16 +225,16 @@ export default function AnalyzerPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-orange-50 border-0">
+            <Card className="border-l-2 border-l-orange-500">
               <CardContent className="p-4">
-                <h4 className="font-semibold text-orange-800 mb-3">
+                <h4 className="font-semibold text-foreground mb-3">
                   Areas to Address
                 </h4>
                 <ul className="space-y-1">
                   {analysis.skillGaps.map((gap, index) => (
                     <li
                       key={index}
-                      className="text-sm text-orange-700 flex items-start"
+                      className="text-sm text-muted-foreground flex items-start"
                     >
                       <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0" />
                       {gap}
@@ -246,12 +246,12 @@ export default function AnalyzerPage() {
           </div>
 
           {analysis.salaryRange && (
-            <Card className="bg-blue-50 border-0">
+            <Card>
               <CardContent className="p-4">
-                <h4 className="font-semibold text-blue-800 mb-2">
+                <h4 className="font-semibold text-foreground mb-2">
                   Salary Range
                 </h4>
-                <p className="text-blue-700">
+                <p className="text-muted-foreground font-mono">
                   {analysis.salaryRange.currency}
                   {analysis.salaryRange.min.toLocaleString()} -{" "}
                   {analysis.salaryRange.currency}

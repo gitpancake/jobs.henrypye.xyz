@@ -54,7 +54,7 @@ export default function NewJobPage() {
         </CardHeader>
         <CardContent>
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 mb-4">
               <p className="text-destructive text-sm">{error}</p>
             </div>
           )}

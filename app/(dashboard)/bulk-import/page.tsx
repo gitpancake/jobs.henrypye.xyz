@@ -68,7 +68,7 @@ export default function BulkImportPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
               <p className="text-destructive text-sm">{error}</p>
             </div>
           )}
@@ -110,11 +110,11 @@ export default function BulkImportPage() {
           </div>
 
           {parseErrors.length > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-              <p className="text-yellow-800 text-sm font-medium mb-2">
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-md p-3">
+              <p className="text-yellow-700 text-sm font-medium mb-2">
                 Parsing warnings ({parseErrors.length}):
               </p>
-              <ul className="text-yellow-700 text-xs space-y-1">
+              <ul className="text-muted-foreground text-xs space-y-1">
                 {parseErrors.map((err, index) => (
                   <li key={index}>{err}</li>
                 ))}
@@ -162,8 +162,8 @@ export default function BulkImportPage() {
                             variant="outline"
                             className={
                               job.status === "REJECTED"
-                                ? "bg-red-100 text-red-800 border-red-200"
-                                : "bg-blue-100 text-blue-800 border-blue-200"
+                                ? "bg-destructive/10 text-destructive border-destructive/20"
+                                : "bg-primary/10 text-primary border-primary/20"
                             }
                           >
                             {job.status}

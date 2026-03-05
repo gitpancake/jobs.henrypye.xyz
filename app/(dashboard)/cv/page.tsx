@@ -82,14 +82,14 @@ export default function CVPage() {
           </p>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
               <p className="text-destructive text-sm">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-3">
-              <p className="text-green-600 text-sm">CV saved successfully!</p>
+            <div className="bg-green-500/10 border border-green-500/20 rounded-md p-3">
+              <p className="text-green-700 text-sm">CV saved successfully!</p>
             </div>
           )}
 

@@ -198,8 +198,8 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
                 }}
                 className={`px-2 py-1 text-xs rounded-md transition-colors ${
                   dateFilter === preset.value
-                    ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                    : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+                    ? 'bg-primary text-primary-foreground border border-primary'
+                    : 'bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80'
                 }`}
               >
                 {preset.label}
@@ -207,7 +207,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
             ))}
           </div>
 
-          <div className="h-4 w-px bg-gray-300" />
+          <div className="h-4 w-px bg-border" />
 
           {/* Custom Date Range Toggle */}
           <button
@@ -219,8 +219,8 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
             }}
             className={`px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1 ${
               showDatePicker || dateRange.start || dateRange.end
-                ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+                ? 'bg-primary text-primary-foreground border border-primary'
+                : 'bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80'
             }`}
           >
             <Calendar className="h-3 w-3" />
@@ -235,7 +235,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
                 setDateRange({start: '', end: ''});
                 setShowDatePicker(false);
               }}
-              className="px-2 py-1 text-xs rounded-md bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 transition-colors flex items-center gap-1"
+              className="px-2 py-1 text-xs rounded-md bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors flex items-center gap-1"
             >
               <X className="h-3 w-3" />
               Clear
@@ -245,26 +245,26 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
 
         {/* Custom Date Range Picker */}
         {showDatePicker && (
-          <div className="bg-gray-50 p-3 rounded-lg border">
+          <div className="bg-muted p-3 rounded-lg border">
             <div className="flex items-center gap-3 flex-wrap">
-              <label className="text-sm text-gray-700">From:</label>
+              <label className="text-sm text-foreground">From:</label>
               <input
                 type="date"
                 value={dateRange.start}
                 onChange={(e) => setDateRange(prev => ({...prev, start: e.target.value}))}
-                className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground focus:ring-1 focus:ring-ring focus:border-ring"
               />
-              
-              <label className="text-sm text-gray-700">To:</label>
+
+              <label className="text-sm text-foreground">To:</label>
               <input
                 type="date"
                 value={dateRange.end}
                 onChange={(e) => setDateRange(prev => ({...prev, end: e.target.value}))}
-                className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground focus:ring-1 focus:ring-ring focus:border-ring"
               />
 
               {(dateRange.start || dateRange.end) && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   {filteredJobs.filter(job => {
                     const jobDate = new Date(job.applicationDate);
                     let matchesStart = true;
@@ -348,7 +348,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
               <p>No jobs found for "{searchQuery}"</p>
               <button
                 onClick={() => setSearchQuery('')}
-                className="mt-2 text-blue-600 hover:text-blue-800 underline text-sm"
+                className="mt-2 text-primary hover:text-primary/80 underline text-sm"
               >
                 Clear search
               </button>

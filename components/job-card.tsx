@@ -19,10 +19,10 @@ interface JobCardProps {
 }
 
 const statusColors: Record<JobStatus, string> = {
-  APPLIED: 'bg-blue-100 text-blue-800 border-blue-200',
-  INTERVIEWING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  ACCEPTED: 'bg-green-100 text-green-800 border-green-200',
-  REJECTED: 'bg-red-100 text-red-800 border-red-200',
+  APPLIED: 'bg-primary/10 text-primary border-primary/20',
+  INTERVIEWING: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20',
+  ACCEPTED: 'bg-green-500/10 text-green-700 border-green-500/20',
+  REJECTED: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
 const statusOptions: JobStatus[] = ['APPLIED', 'INTERVIEWING', 'ACCEPTED', 'REJECTED'];
@@ -53,9 +53,9 @@ export const JobCard = memo(function JobCard({
               <button
                 onClick={() => hasAIAnalysis && setIsExpanded(!isExpanded)}
                 className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
-                  job.suitabilityScore >= 80 ? 'bg-green-100 text-green-800' :
-                  job.suitabilityScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
+                  job.suitabilityScore >= 80 ? 'bg-green-500/10 text-green-700' :
+                  job.suitabilityScore >= 60 ? 'bg-yellow-500/10 text-yellow-700' :
+                  'bg-destructive/10 text-destructive'
                 } ${hasAIAnalysis ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
                 disabled={!hasAIAnalysis}
                 aria-label={hasAIAnalysis ? `${isExpanded ? 'Hide' : 'Show'} AI analysis details` : 'AI analysis unavailable'}
@@ -77,7 +77,7 @@ export const JobCard = memo(function JobCard({
           )}
           
           {(job.salaryMin || job.salaryMax) && (
-            <p className="text-green-600 text-sm font-medium mb-2">
+            <p className="text-green-700 text-sm font-medium mb-2">
               {job.salaryMin && job.salaryMax ? 
                 `${job.salaryCurrency || '$'}${job.salaryMin.toLocaleString()} - ${job.salaryCurrency || '$'}${job.salaryMax.toLocaleString()}` :
                 job.salaryMin ? 
@@ -101,7 +101,7 @@ export const JobCard = memo(function JobCard({
               <span className="flex items-center gap-1">
                 Contact: {job.linkedinContactName}
                 {job.hasMessagedContact && (
-                  <span className="text-green-600" aria-label="Contact messaged">✓</span>
+                  <span className="text-green-700" aria-label="Contact messaged">✓</span>
                 )}
               </span>
             )}
@@ -112,7 +112,7 @@ export const JobCard = memo(function JobCard({
               href={job.linkedinContactUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+              className="inline-flex items-center gap-1 text-primary hover:text-primary/80 text-sm"
               aria-label={`View LinkedIn profile of ${job.linkedinContactName || 'contact'}`}
             >
               LinkedIn Profile <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -186,18 +186,18 @@ export const JobCard = memo(function JobCard({
               )}
 
               {job.suggestedNextSteps && job.suggestedNextSteps.length > 0 && (
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <h5 className="text-sm font-medium text-blue-900 mb-2">Suggested Next Steps</h5>
-                  <ul className="text-sm text-blue-800 space-y-1">
+                <div className="mt-4 p-3 bg-muted rounded-lg">
+                  <h5 className="text-sm font-medium text-foreground mb-2">Suggested Next Steps</h5>
+                  <ul className="text-sm text-muted-foreground space-y-1">
                     {job.suggestedNextSteps.map((step, index) => (
                       <li key={index} className="flex items-start">
-                        <span className="text-blue-600 mr-2">•</span>
+                        <span className="text-muted-foreground mr-2">•</span>
                         <span>{step}</span>
                       </li>
                     ))}
                     {job.linkedinContactName && !job.hasMessagedContact && (
                       <li className="flex items-start">
-                        <span className="text-blue-600 mr-2">•</span>
+                        <span className="text-muted-foreground mr-2">•</span>
                         <span>Message {job.linkedinContactName} on LinkedIn to express interest</span>
                       </li>
                     )}
@@ -232,7 +232,7 @@ export const JobCard = memo(function JobCard({
               title={isAnalyzing ? 'Analyzing with AI...' : 'Analyze with AI'}
             >
               <Sparkles
-                className={`h-4 w-4 ${isAnalyzing ? 'animate-spin text-purple-600' : ''}`}
+                className={`h-4 w-4 ${isAnalyzing ? 'animate-spin text-primary' : ''}`}
                 aria-hidden="true"
               />
             </Button>
