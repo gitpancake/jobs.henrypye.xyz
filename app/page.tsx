@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Job, JobStatus, BulkImportJob } from "@/lib/types";
 import { CreateJobFormData } from "@/lib/validations";
 import { JobList } from "@/components/job-list";
-import { JobStats } from "@/components/job-stats";
 import Shell from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload, Trash2, FileText, Sparkles } from "lucide-react";
@@ -507,6 +506,8 @@ export default function Home() {
         <Shell
             isObfuscated={isObfuscated}
             onToggleObfuscation={handleToggleObfuscation}
+            stats={stats}
+            onOpenRejectionInsights={() => setIsRejectionInsightsModalOpen(true)}
         >
             <div className="flex flex-wrap justify-end gap-2 mb-6">
                 {jobs.length > 0 && (
@@ -572,13 +573,6 @@ export default function Home() {
                     onDismiss={() => setError(null)}
                 />
             )}
-
-            <JobStats
-                stats={stats}
-                onOpenRejectionInsights={() =>
-                    setIsRejectionInsightsModalOpen(true)
-                }
-            />
 
             <JobList
                 jobs={displayJobs}

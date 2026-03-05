@@ -2,12 +2,13 @@
 
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Lightbulb } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -23,12 +24,22 @@ interface ShellProps {
   children: React.ReactNode;
   isObfuscated: boolean;
   onToggleObfuscation: () => void;
+  stats?: {
+    total: number;
+    applied: number;
+    interviewing: number;
+    accepted: number;
+    rejected: number;
+  };
+  onOpenRejectionInsights?: () => void;
 }
 
 export default function Shell({
   children,
   isObfuscated,
   onToggleObfuscation,
+  stats,
+  onOpenRejectionInsights,
 }: ShellProps) {
   const router = useRouter();
 
@@ -63,6 +74,55 @@ export default function Shell({
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
+          {stats && (
+            <SidebarGroup>
+              <SidebarGroupLabel>Analytics</SidebarGroupLabel>
+              <div className="px-3 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-sidebar-foreground/70">Total</span>
+                  <span className="font-mono font-semibold text-sidebar-foreground">{stats.total}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-sidebar-foreground/70">Applied</span>
+                  <span className="font-mono font-semibold text-blue-400">{stats.applied}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-sidebar-foreground/70">Interviewing</span>
+                  <span className="font-mono font-semibold text-yellow-400">{stats.interviewing}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-sidebar-foreground/70">Accepted</span>
+                  <span className="font-mono font-semibold text-green-400">{stats.accepted}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-sidebar-foreground/70">Rejected</span>
+                  <span className="font-mono font-semibold text-red-400">{stats.rejected}</span>
+                </div>
+                {stats.rejected > 0 && onOpenRejectionInsights && (
+                  <button
+                    onClick={onOpenRejectionInsights}
+                    className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors mt-1"
+                  >
+                    <Lightbulb className="h-3.5 w-3.5" />
+                    Rejection Insights
+                  </button>
+                )}
+                <Separator className="bg-sidebar-border my-2" />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-sidebar-foreground/70">Success</span>
+                  <span className="font-mono font-semibold text-green-400">
+                    {stats.total > 0 ? ((stats.accepted / stats.total) * 100).toFixed(1) : "0.0"}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-sidebar-foreground/70">Response</span>
+                  <span className="font-mono font-semibold text-blue-400">
+                    {stats.total > 0 ? (((stats.interviewing + stats.accepted) / stats.total) * 100).toFixed(1) : "0.0"}%
+                  </span>
+                </div>
+              </div>
+            </SidebarGroup>
+          )}
         </SidebarContent>
         <SidebarFooter>
           <Separator className="bg-sidebar-border" />
