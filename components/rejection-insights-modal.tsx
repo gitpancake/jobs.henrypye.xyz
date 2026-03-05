@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-    XMarkIcon,
-    LightBulbIcon,
-    SparklesIcon,
-} from "@heroicons/react/24/outline";
+import { Lightbulb, Sparkles } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { RejectionInsightsResult } from "@/lib/types";
 
 interface RejectionInsightsModalProps {
@@ -70,71 +68,53 @@ export function RejectionInsightsModal({
         onClose();
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b">
-                    <div className="flex items-center gap-2">
-                        <LightBulbIcon className="h-6 w-6 text-amber-500" />
-                        <h2 className="text-xl font-semibold text-gray-900">
-                            Rejection Insights
-                        </h2>
-                    </div>
-                    <button
-                        onClick={handleClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                        <XMarkIcon className="h-6 w-6" />
-                    </button>
-                </div>
+        <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Lightbulb className="h-5 w-5 text-amber-500" />
+                        Rejection Insights
+                    </DialogTitle>
+                </DialogHeader>
 
-                <div className="p-6">
-                    {/* Loading State */}
+                <div>
                     {isLoading && (
                         <div className="flex flex-col items-center justify-center py-12">
-                            <SparklesIcon className="h-8 w-8 text-purple-600 animate-spin mb-4" />
-                            <p className="text-gray-600 font-medium">
+                            <Sparkles className="h-8 w-8 text-purple-600 animate-spin mb-4" />
+                            <p className="text-foreground font-medium">
                                 Analyzing your rejected applications...
                             </p>
-                            <p className="text-gray-400 text-sm mt-1">
+                            <p className="text-muted-foreground text-sm mt-1">
                                 Finding patterns across your rejections
                             </p>
                         </div>
                     )}
 
-                    {/* Error State */}
                     {error && (
                         <div className="space-y-4">
                             <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                                <p className="text-red-700 text-sm">{error}</p>
+                                <p className="text-destructive text-sm">{error}</p>
                             </div>
-                            <button
-                                onClick={fetchInsights}
-                                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
-                            >
+                            <Button onClick={fetchInsights}>
                                 Try Again
-                            </button>
+                            </Button>
                         </div>
                     )}
 
-                    {/* Results */}
                     {insights && (
                         <div className="space-y-6">
-                            {/* Summary */}
                             <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-6">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <LightBulbIcon className="h-5 w-5 text-amber-600" />
-                                    <h3 className="text-lg font-semibold text-gray-900">
+                                    <Lightbulb className="h-5 w-5 text-amber-600" />
+                                    <h3 className="text-lg font-semibold text-foreground">
                                         Summary
                                     </h3>
-                                    <span className="text-sm text-gray-500 ml-auto">
+                                    <span className="text-sm text-muted-foreground ml-auto">
                                         {insights.jobsAnalyzed} roles analyzed
                                     </span>
                                 </div>
-                                <p className="text-gray-700 leading-relaxed">
+                                <p className="text-foreground/80 leading-relaxed">
                                     {insights.summary}
                                 </p>
                             </div>
@@ -244,7 +224,7 @@ export function RejectionInsightsModal({
                         </div>
                     )}
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }

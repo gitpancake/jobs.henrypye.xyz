@@ -7,14 +7,9 @@ import { Job, JobStatus, BulkImportJob } from "@/lib/types";
 import { CreateJobFormData } from "@/lib/validations";
 import { JobList } from "@/components/job-list";
 import { JobStats } from "@/components/job-stats";
-import PlusIcon from "@heroicons/react/24/outline/PlusIcon";
-import CloudArrowUpIcon from "@heroicons/react/24/outline/CloudArrowUpIcon";
-import TrashIcon from "@heroicons/react/24/outline/TrashIcon";
-import DocumentTextIcon from "@heroicons/react/24/outline/DocumentTextIcon";
-import ArrowRightOnRectangleIcon from "@heroicons/react/24/outline/ArrowRightOnRectangleIcon";
-import SparklesIcon from "@heroicons/react/24/outline/SparklesIcon";
-import EyeIcon from "@heroicons/react/24/outline/EyeIcon";
-import EyeSlashIcon from "@heroicons/react/24/outline/EyeSlashIcon";
+import Shell from "@/components/Shell";
+import { Button } from "@/components/ui/button";
+import { Plus, Upload, Trash2, FileText, Sparkles } from "lucide-react";
 import { ErrorMessage } from "@/components/error-message";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { obfuscateJobs } from "@/lib/obfuscation";
@@ -440,20 +435,6 @@ export default function Home() {
         }
     }, [refreshData]);
 
-    const handleLogout = useCallback(async () => {
-        try {
-            const response = await fetch("/api/auth/logout", {
-                method: "POST",
-            });
-
-            if (response.ok) {
-                window.location.href = "/login";
-            }
-        } catch (error) {
-            console.error("Logout failed:", error);
-        }
-    }, []);
-
     const handleToggleObfuscation = useCallback(() => {
         setIsObfuscated((prev) => !prev);
     }, []);
@@ -505,7 +486,7 @@ export default function Home() {
 
     if (authChecking || isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="fixed inset-0 flex items-center justify-center bg-background">
                 <LoadingSpinner
                     size="lg"
                     message={
@@ -523,160 +504,126 @@ export default function Home() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">
-                            Job Tracker
-                        </h1>
-                        <p className="text-gray-600 mt-2">
-                            Track your job applications and career journey
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleToggleObfuscation}
-                            className="text-gray-500 hover:text-gray-700 p-2 rounded-md hover:bg-gray-100 transition-colors"
-                            title={
-                                isObfuscated
-                                    ? "Show real data"
-                                    : "Obfuscate data for screenshots"
-                            }
-                        >
-                            {isObfuscated ? (
-                                <EyeIcon className="h-5 w-5" />
-                            ) : (
-                                <EyeSlashIcon className="h-5 w-5" />
-                            )}
-                        </button>
-
-                        <button
-                            onClick={handleLogout}
-                            className="text-gray-500 hover:text-gray-700 p-2 rounded-md hover:bg-gray-100 transition-colors"
-                            title="Logout"
-                        >
-                            <ArrowRightOnRectangleIcon className="h-5 w-5" />
-                        </button>
-                    </div>
-                </div>
-
-                <div className="flex justify-end gap-3 mb-6">
-                    {jobs.length > 0 && (
-                        <button
-                            onClick={handleClearAllJobs}
-                            disabled={loadingOperation === "clear-all"}
-                            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <TrashIcon className="h-4 w-4" />
-                            {loadingOperation === "clear-all"
-                                ? "Clearing..."
-                                : "Clear All"}
-                        </button>
-                    )}
-                    <button
-                        onClick={() => setIsJobAnalysisModalOpen(true)}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center gap-2"
+        <Shell
+            isObfuscated={isObfuscated}
+            onToggleObfuscation={handleToggleObfuscation}
+        >
+            <div className="flex flex-wrap justify-end gap-2 mb-6">
+                {jobs.length > 0 && (
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleClearAllJobs}
+                        disabled={loadingOperation === "clear-all"}
                     >
-                        <SparklesIcon className="h-4 w-4" />
-                        Job Fit Analyzer
-                    </button>
-                    <button
-                        onClick={() => setIsCVModalOpen(true)}
-                        className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 flex items-center gap-2"
-                    >
-                        <DocumentTextIcon className="h-4 w-4" />
-                        Manage CV
-                    </button>
-                    {jobs.filter((job) => job.description && !job.aiAnalyzedAt)
-                        .length > 0 && (
-                        <button
-                            onClick={handleBatchAnalyze}
-                            disabled={loadingOperation === "batch-analyze"}
-                            className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <SparklesIcon className="h-4 w-4" />
-                            {loadingOperation === "batch-analyze"
-                                ? "Analyzing..."
-                                : `Analyze All (${jobs.filter((job) => job.description && !job.aiAnalyzedAt).length})`}
-                        </button>
-                    )}
-                    <button
-                        onClick={() => setIsBulkImportModalOpen(true)}
-                        className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center gap-2"
-                    >
-                        <CloudArrowUpIcon className="h-4 w-4" />
-                        Bulk Import
-                    </button>
-                    <button
-                        onClick={() => setIsJobModalOpen(true)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-2"
-                    >
-                        <PlusIcon className="h-4 w-4" />
-                        Add Job
-                    </button>
-                </div>
-
-                {error && (
-                    <ErrorMessage
-                        error={error}
-                        onDismiss={() => setError(null)}
-                    />
+                        <Trash2 />
+                        {loadingOperation === "clear-all"
+                            ? "Clearing..."
+                            : "Clear All"}
+                    </Button>
                 )}
-
-                <JobStats
-                    stats={stats}
-                    onOpenRejectionInsights={() =>
-                        setIsRejectionInsightsModalOpen(true)
-                    }
-                />
-
-                <JobList
-                    jobs={displayJobs}
-                    onEdit={handleEditJob}
-                    onDelete={handleDeleteJob}
-                    onDuplicate={handleDuplicateJob}
-                    onStatusChange={handleStatusChange}
-                    onAnalyze={handleAnalyzeJob}
-                    analyzingJobId={analyzingJobId}
-                    recentlyAnalyzedJobId={recentlyAnalyzedJobId}
-                    onClearRecentlyAnalyzed={handleClearRecentlyAnalyzed}
-                />
-
-                <JobModal
-                    isOpen={isJobModalOpen}
-                    onClose={handleCloseJobModal}
-                    onSubmit={handleSubmitJob}
-                    job={editingJob}
-                    isSubmitting={isSubmitting}
-                    onAnalyze={handleAnalyzeJob}
-                    isAnalyzing={analyzingJobId === editingJob?.id}
-                />
-
-                <BulkImportModal
-                    isOpen={isBulkImportModalOpen}
-                    onClose={() => setIsBulkImportModalOpen(false)}
-                    onSubmit={handleBulkImport}
-                    isSubmitting={isSubmitting}
-                />
-
-                <CVModal
-                    isOpen={isCVModalOpen}
-                    onClose={() => setIsCVModalOpen(false)}
-                />
-
-                <JobAnalysisModal
-                    isOpen={isJobAnalysisModalOpen}
-                    onClose={() => setIsJobAnalysisModalOpen(false)}
-                    onJobCreated={refreshData}
-                />
-
-                <RejectionInsightsModal
-                    isOpen={isRejectionInsightsModalOpen}
-                    onClose={() => setIsRejectionInsightsModalOpen(false)}
-                />
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsJobAnalysisModalOpen(true)}
+                >
+                    <Sparkles />
+                    Job Fit Analyzer
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsCVModalOpen(true)}
+                >
+                    <FileText />
+                    Manage CV
+                </Button>
+                {jobs.filter((job) => job.description && !job.aiAnalyzedAt)
+                    .length > 0 && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleBatchAnalyze}
+                        disabled={loadingOperation === "batch-analyze"}
+                    >
+                        <Sparkles />
+                        {loadingOperation === "batch-analyze"
+                            ? "Analyzing..."
+                            : `Analyze All (${jobs.filter((job) => job.description && !job.aiAnalyzedAt).length})`}
+                    </Button>
+                )}
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsBulkImportModalOpen(true)}
+                >
+                    <Upload />
+                    Bulk Import
+                </Button>
+                <Button size="sm" onClick={() => setIsJobModalOpen(true)}>
+                    <Plus />
+                    Add Job
+                </Button>
             </div>
-        </div>
+
+            {error && (
+                <ErrorMessage
+                    error={error}
+                    onDismiss={() => setError(null)}
+                />
+            )}
+
+            <JobStats
+                stats={stats}
+                onOpenRejectionInsights={() =>
+                    setIsRejectionInsightsModalOpen(true)
+                }
+            />
+
+            <JobList
+                jobs={displayJobs}
+                onEdit={handleEditJob}
+                onDelete={handleDeleteJob}
+                onDuplicate={handleDuplicateJob}
+                onStatusChange={handleStatusChange}
+                onAnalyze={handleAnalyzeJob}
+                analyzingJobId={analyzingJobId}
+                recentlyAnalyzedJobId={recentlyAnalyzedJobId}
+                onClearRecentlyAnalyzed={handleClearRecentlyAnalyzed}
+            />
+
+            <JobModal
+                isOpen={isJobModalOpen}
+                onClose={handleCloseJobModal}
+                onSubmit={handleSubmitJob}
+                job={editingJob}
+                isSubmitting={isSubmitting}
+                onAnalyze={handleAnalyzeJob}
+                isAnalyzing={analyzingJobId === editingJob?.id}
+            />
+
+            <BulkImportModal
+                isOpen={isBulkImportModalOpen}
+                onClose={() => setIsBulkImportModalOpen(false)}
+                onSubmit={handleBulkImport}
+                isSubmitting={isSubmitting}
+            />
+
+            <CVModal
+                isOpen={isCVModalOpen}
+                onClose={() => setIsCVModalOpen(false)}
+            />
+
+            <JobAnalysisModal
+                isOpen={isJobAnalysisModalOpen}
+                onClose={() => setIsJobAnalysisModalOpen(false)}
+                onJobCreated={refreshData}
+            />
+
+            <RejectionInsightsModal
+                isOpen={isRejectionInsightsModalOpen}
+                onClose={() => setIsRejectionInsightsModalOpen(false)}
+            />
+        </Shell>
     );
 }

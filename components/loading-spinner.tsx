@@ -41,7 +41,7 @@ export const LoadingSpinner = memo(function LoadingSpinner({
         />
       </svg>
       {message && (
-        <span className="ml-2 text-gray-600">{message}</span>
+        <span className="ml-2 text-muted-foreground">{message}</span>
       )}
       <span className="sr-only">Loading...</span>
     </div>

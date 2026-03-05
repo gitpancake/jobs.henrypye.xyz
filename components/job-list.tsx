@@ -3,7 +3,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Job, JobStatus } from '@/lib/types';
 import { JobCard } from './job-card';
-import { MagnifyingGlassIcon, CalendarIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Search, Calendar, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface JobListProps {
   jobs: Job[];
@@ -152,21 +155,21 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
       {/* Search Input */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+          <Search className="h-4 w-4 text-muted-foreground" />
         </div>
-        <input
+        <Input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by company, job title, or date..."
-          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+          className="pl-10"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
             className="absolute inset-y-0 right-0 pr-3 flex items-center"
           >
-            <span className="text-gray-400 hover:text-gray-600">×</span>
+            <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
           </button>
         )}
       </div>
@@ -174,8 +177,8 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
       {/* Date Filters */}
       <div className="space-y-3">
         <div className="flex items-center gap-3 flex-wrap">
-          <CalendarIcon className="h-4 w-4 text-gray-500" />
-          <span className="text-sm text-gray-700 font-medium">Date Filters:</span>
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-foreground font-medium">Date Filters:</span>
           
           {/* Preset Date Filters */}
           <div className="flex gap-2 flex-wrap">
@@ -220,7 +223,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
                 : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
             }`}
           >
-            <CalendarIcon className="h-3 w-3" />
+            <Calendar className="h-3 w-3" />
             Custom Range
           </button>
 
@@ -234,7 +237,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
               }}
               className="px-2 py-1 text-xs rounded-md bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 transition-colors flex items-center gap-1"
             >
-              <XMarkIcon className="h-3 w-3" />
+              <X className="h-3 w-3" />
               Clear
             </button>
           )}
@@ -290,10 +293,10 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setFilter('ALL')}
-          className={`px-3 py-1 text-sm rounded-full ${
+          className={`px-3 py-1 text-sm rounded-full transition-colors ${
             filter === 'ALL'
-              ? 'bg-gray-800 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
           }`}
         >
           All ({jobs.length})
@@ -304,10 +307,10 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
             <button
               key={status}
               onClick={() => setFilter(status)}
-              className={`px-3 py-1 text-sm rounded-full ${
+              className={`px-3 py-1 text-sm rounded-full transition-colors ${
                 filter === status
-                  ? 'bg-gray-800 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
               }`}
             >
               {status.replace('_', ' ')} ({count})
@@ -318,16 +321,16 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
 
       {/* Secondary Filter - No AI Analysis */}
       <div className="flex items-center gap-2">
-        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
           <input
             type="checkbox"
             checked={showNoAIAnalysisOnly}
             onChange={(e) => setShowNoAIAnalysisOnly(e.target.checked)}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-input"
           />
           Show only jobs not analyzed by AI
           {showNoAIAnalysisOnly && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-muted-foreground">
               ({jobs.filter(job => {
                 const matchesStatus = filter === 'ALL' || job.status === filter;
                 const hasNoAIAnalysis = !job.aiAnalyzedAt;
@@ -339,7 +342,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
       </div>
 
       {filteredJobs.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground">
           {searchQuery ? (
             <div>
               <p>No jobs found for "{searchQuery}"</p>
@@ -365,7 +368,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
         <div className="space-y-3">
           {/* Results Counter */}
           {(searchQuery || filter !== 'ALL' || showNoAIAnalysisOnly || dateFilter || dateRange.start || dateRange.end) && (
-            <div className="text-sm text-gray-600 pb-2">
+            <div className="text-sm text-muted-foreground pb-2">
               Showing {filteredJobs.length} of {jobs.length} jobs
               {searchQuery && ` for "${searchQuery}"`}
               {filter !== 'ALL' && ` in ${filter.toLowerCase()}`}
