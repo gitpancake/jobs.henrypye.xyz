@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Job, JobStatus } from "@/lib/types";
 import { JobList } from "@/components/job-list";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/animate-ui/components/buttons/button";
+import { Fade } from "@/components/animate-ui/primitives/effects/fade";
 import { Plus, Trash2, Sparkles } from "lucide-react";
 import { ErrorMessage } from "@/components/error-message";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -245,7 +246,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="flex flex-wrap justify-end gap-2 mb-6">
+      <Fade className="flex flex-wrap justify-end gap-2 mb-6">
         {jobs.length > 0 && (
           <Button
             variant="destructive"
@@ -277,7 +278,7 @@ export default function DashboardPage() {
             Add Job
           </Button>
         </Link>
-      </div>
+      </Fade>
 
       {error && (
         <ErrorMessage error={error} onDismiss={() => setError(null)} />

@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/animate-ui/components/buttons/button";
+import { Fade } from "@/components/animate-ui/primitives/effects/fade";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,6 +72,7 @@ export default function CVPage() {
           </Button>
         </Link>
       </div>
+      <Fade>
       <Card>
         <CardHeader>
           <CardTitle>Manage Your CV</CardTitle>
@@ -89,7 +91,7 @@ export default function CVPage() {
 
           {success && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-md p-3">
-              <p className="text-green-700 text-sm">CV saved successfully!</p>
+              <p className="text-green-700 dark:text-green-400 text-sm">CV saved successfully!</p>
             </div>
           )}
 
@@ -115,6 +117,7 @@ export default function CVPage() {
           </div>
         </CardContent>
       </Card>
+      </Fade>
     </div>
   );
 }

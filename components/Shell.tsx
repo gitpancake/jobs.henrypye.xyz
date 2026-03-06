@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { ThemeTogglerButton } from "@/components/animate-ui/components/buttons/theme-toggler";
 import { DashboardContext } from "@/lib/dashboard-context";
 import Link from "next/link";
 import { signOut } from "firebase/auth";
@@ -195,22 +196,29 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-3">
               <SidebarTrigger className="-ml-1" />
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsObfuscated((prev) => !prev)}
-              title={
-                isObfuscated
-                  ? "Show real data"
-                  : "Obfuscate data for screenshots"
-              }
-            >
-              {isObfuscated ? (
-                <Eye className="h-4 w-4" />
-              ) : (
-                <EyeOff className="h-4 w-4" />
-              )}
-            </Button>
+            <div className="flex items-center gap-1">
+              <ThemeTogglerButton
+                variant="ghost"
+                size="sm"
+                modes={["dark", "light"]}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsObfuscated((prev) => !prev)}
+                title={
+                  isObfuscated
+                    ? "Show real data"
+                    : "Obfuscate data for screenshots"
+                }
+              >
+                {isObfuscated ? (
+                  <Eye className="h-4 w-4" />
+                ) : (
+                  <EyeOff className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </header>
           <div className="p-4 lg:p-8">{children}</div>
         </SidebarInset>

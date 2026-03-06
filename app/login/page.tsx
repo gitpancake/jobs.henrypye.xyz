@@ -7,7 +7,8 @@ import { getFirebaseAuth } from '@/lib/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/animate-ui/components/buttons/button';
+import { Fade } from '@/components/animate-ui/primitives/effects/fade';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -50,7 +51,7 @@ export default function LoginPage() {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-background">
-      <div className="w-full max-w-sm">
+      <Fade className="w-full max-w-sm">
         <Card>
           <CardHeader>
             <CardTitle className="font-mono text-sm font-bold tracking-tight">
@@ -91,7 +92,7 @@ export default function LoginPage() {
               )}
 
               {resetSent && (
-                <p className="text-xs text-green-600">Password reset email sent</p>
+                <p className="text-xs text-green-600 dark:text-green-400">Password reset email sent</p>
               )}
 
               <Button
@@ -125,7 +126,7 @@ export default function LoginPage() {
             </form>
           </CardContent>
         </Card>
-      </div>
+      </Fade>
     </div>
   );
 }

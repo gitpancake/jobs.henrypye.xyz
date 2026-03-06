@@ -7,7 +7,8 @@ import Link from "next/link";
 import { JobForm } from "@/components/job-form";
 import { CreateJobFormData } from "@/lib/validations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/animate-ui/components/buttons/button";
+import { Fade } from "@/components/animate-ui/primitives/effects/fade";
 import { useDashboard } from "@/lib/dashboard-context";
 
 export default function NewJobPage() {
@@ -48,6 +49,7 @@ export default function NewJobPage() {
           </Button>
         </Link>
       </div>
+      <Fade>
       <Card>
         <CardHeader>
           <CardTitle>Add New Job Application</CardTitle>
@@ -61,6 +63,7 @@ export default function NewJobPage() {
           <JobForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
         </CardContent>
       </Card>
+      </Fade>
     </div>
   );
 }

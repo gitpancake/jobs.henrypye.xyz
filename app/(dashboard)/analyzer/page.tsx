@@ -4,7 +4,9 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Sparkles, FileText, BarChart3, Plus } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/animate-ui/components/buttons/button";
+import { Fade } from "@/components/animate-ui/primitives/effects/fade";
+import { Slide } from "@/components/animate-ui/primitives/effects/slide";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,6 +123,7 @@ export default function AnalyzerPage() {
         </Link>
       </div>
 
+      <Fade>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -156,7 +159,7 @@ export default function AnalyzerPage() {
                 variant="outline"
                 onClick={handleCreateJob}
                 disabled={isCreatingJob}
-                className="text-green-700 border-green-700/30 hover:bg-green-500/10"
+                className="text-green-700 dark:text-green-400 border-green-700/30 hover:bg-green-500/10"
               >
                 <Plus />
                 {isCreatingJob ? "Adding..." : "I've Applied"}
@@ -177,9 +180,10 @@ export default function AnalyzerPage() {
           )}
         </CardContent>
       </Card>
+      </Fade>
 
       {analysis && (
-        <div className="space-y-6">
+        <Slide direction="up" offset={30} className="space-y-6">
           <Card className="bg-muted border-0">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
@@ -192,9 +196,9 @@ export default function AnalyzerPage() {
                 <div
                   className={`text-2xl font-bold px-3 py-1 rounded-full ${
                     analysis.suitabilityScore >= 80
-                      ? "bg-green-500/10 text-green-700"
+                      ? "bg-green-500/10 text-green-700 dark:text-green-400"
                       : analysis.suitabilityScore >= 60
-                        ? "bg-yellow-500/10 text-yellow-700"
+                        ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
                         : "bg-destructive/10 text-destructive"
                   }`}
                 >
@@ -352,7 +356,7 @@ export default function AnalyzerPage() {
               </CardContent>
             </Card>
           </div>
-        </div>
+        </Slide>
       )}
     </div>
   );

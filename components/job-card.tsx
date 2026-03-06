@@ -6,7 +6,7 @@ import { Job, JobStatus } from '@/lib/types';
 import { Pencil, Trash2, Copy, ExternalLink, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/animate-ui/components/buttons/button';
 
 interface JobCardProps {
   job: Job;
@@ -20,8 +20,8 @@ interface JobCardProps {
 
 const statusColors: Record<JobStatus, string> = {
   APPLIED: 'bg-primary/10 text-primary border-primary/20',
-  INTERVIEWING: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20',
-  ACCEPTED: 'bg-green-500/10 text-green-700 border-green-500/20',
+  INTERVIEWING: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20',
+  ACCEPTED: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
   REJECTED: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
@@ -53,8 +53,8 @@ export const JobCard = memo(function JobCard({
               <button
                 onClick={() => hasAIAnalysis && setIsExpanded(!isExpanded)}
                 className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
-                  job.suitabilityScore >= 80 ? 'bg-green-500/10 text-green-700' :
-                  job.suitabilityScore >= 60 ? 'bg-yellow-500/10 text-yellow-700' :
+                  job.suitabilityScore >= 80 ? 'bg-green-500/10 text-green-700 dark:text-green-400' :
+                  job.suitabilityScore >= 60 ? 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400' :
                   'bg-destructive/10 text-destructive'
                 } ${hasAIAnalysis ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
                 disabled={!hasAIAnalysis}
@@ -77,7 +77,7 @@ export const JobCard = memo(function JobCard({
           )}
           
           {(job.salaryMin || job.salaryMax) && (
-            <p className="text-green-700 text-sm font-medium mb-2">
+            <p className="text-green-700 dark:text-green-400 text-sm font-medium mb-2">
               {job.salaryMin && job.salaryMax ? 
                 `${job.salaryCurrency || '$'}${job.salaryMin.toLocaleString()} - ${job.salaryCurrency || '$'}${job.salaryMax.toLocaleString()}` :
                 job.salaryMin ? 
@@ -101,7 +101,7 @@ export const JobCard = memo(function JobCard({
               <span className="flex items-center gap-1">
                 Contact: {job.linkedinContactName}
                 {job.hasMessagedContact && (
-                  <span className="text-green-700" aria-label="Contact messaged">✓</span>
+                  <span className="text-green-700 dark:text-green-400" aria-label="Contact messaged">✓</span>
                 )}
               </span>
             )}

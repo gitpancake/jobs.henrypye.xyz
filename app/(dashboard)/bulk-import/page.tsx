@@ -4,7 +4,8 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/animate-ui/components/buttons/button";
+import { Fade } from "@/components/animate-ui/primitives/effects/fade";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +63,7 @@ export default function BulkImportPage() {
           </Button>
         </Link>
       </div>
+      <Fade>
       <Card>
         <CardHeader>
           <CardTitle>Bulk Import Jobs</CardTitle>
@@ -111,7 +113,7 @@ export default function BulkImportPage() {
 
           {parseErrors.length > 0 && (
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-md p-3">
-              <p className="text-yellow-700 text-sm font-medium mb-2">
+              <p className="text-yellow-700 dark:text-yellow-400 text-sm font-medium mb-2">
                 Parsing warnings ({parseErrors.length}):
               </p>
               <ul className="text-muted-foreground text-xs space-y-1">
@@ -198,6 +200,7 @@ export default function BulkImportPage() {
           </div>
         </CardContent>
       </Card>
+      </Fade>
     </div>
   );
 }

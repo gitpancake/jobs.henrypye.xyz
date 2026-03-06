@@ -7,7 +7,7 @@ import { Job } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/animate-ui/components/buttons/button';
 
 interface JobFormProps {
   onSubmit: (data: CreateJobFormData) => void;

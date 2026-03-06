@@ -8,7 +8,8 @@ import { JobForm } from "@/components/job-form";
 import { Job } from "@/lib/types";
 import { CreateJobFormData } from "@/lib/validations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/animate-ui/components/buttons/button";
+import { Fade } from "@/components/animate-ui/primitives/effects/fade";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useDashboard } from "@/lib/dashboard-context";
 
@@ -110,6 +111,7 @@ export default function EditJobPage() {
           </Button>
         )}
       </div>
+      <Fade>
       <Card>
         <CardHeader>
           <CardTitle>Edit Job Application</CardTitle>
@@ -129,6 +131,7 @@ export default function EditJobPage() {
           )}
         </CardContent>
       </Card>
+      </Fade>
     </div>
   );
 }

@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, Lightbulb, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/animate-ui/components/buttons/button";
+import { Slide } from "@/components/animate-ui/primitives/effects/slide";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { RejectionInsightsResult } from "@/lib/types";
@@ -93,6 +94,7 @@ export default function InsightsPage() {
 
       {insights && (
         <div className="space-y-6">
+          <Slide direction="up" offset={20}>
           <Card className="bg-muted border-0">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-3">
@@ -109,8 +111,10 @@ export default function InsightsPage() {
               </p>
             </CardContent>
           </Card>
+          </Slide>
 
           {insights.commonRequirements.length > 0 && (
+            <Slide direction="up" offset={20} delay={100}>
             <Card className="border-l-2 border-l-primary">
               <CardContent className="p-4">
                 <h4 className="font-semibold text-foreground mb-3">
@@ -133,9 +137,11 @@ export default function InsightsPage() {
                 </ul>
               </CardContent>
             </Card>
+            </Slide>
           )}
 
           {insights.skillGaps.length > 0 && (
+            <Slide direction="up" offset={20} delay={200}>
             <Card className="border-l-2 border-l-orange-500">
               <CardContent className="p-4">
                 <h4 className="font-semibold text-foreground mb-3">
@@ -158,9 +164,11 @@ export default function InsightsPage() {
                 </ul>
               </CardContent>
             </Card>
+            </Slide>
           )}
 
           {insights.patterns.length > 0 && (
+            <Slide direction="up" offset={20} delay={300}>
             <Card className="border-l-2 border-l-violet-500">
               <CardContent className="p-4">
                 <h4 className="font-semibold text-foreground mb-3">
@@ -179,9 +187,11 @@ export default function InsightsPage() {
                 </ul>
               </CardContent>
             </Card>
+            </Slide>
           )}
 
           {insights.recommendations.length > 0 && (
+            <Slide direction="up" offset={20} delay={400}>
             <Card className="border-l-2 border-l-green-600">
               <CardContent className="p-4">
                 <h4 className="font-semibold text-foreground mb-3">
@@ -205,6 +215,7 @@ export default function InsightsPage() {
                 </ul>
               </CardContent>
             </Card>
+            </Slide>
           )}
         </div>
       )}
