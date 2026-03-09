@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Eye,
   EyeOff,
@@ -27,11 +27,12 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeTogglerButton } from "@/components/animate-ui/components/buttons/theme-toggler";
+import ProfileDialog from "@/components/profile-dialog";
 import { DashboardContext } from "@/lib/dashboard-context";
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { signOut } from "firebase/auth";
-import { getFirebaseAuth } from "@/lib/firebase";
 
 interface Stats {
   total: number;
@@ -39,6 +40,18 @@ interface Stats {
   interviewing: number;
   accepted: number;
   rejected: number;
+}
+
+function getInitials(name: string | null, email: string): string {
+  if (name) {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  }
+  return email[0]?.toUpperCase() ?? "?";
 }
 
 const navItems = [
@@ -51,8 +64,9 @@ const navItems = [
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [isObfuscated, setIsObfuscated] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
+  const { user, logout } = useAuth();
 
   const refreshStats = useCallback(async () => {
     try {
@@ -68,16 +82,6 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refreshStats();
   }, [pathname, refreshStats]);
-
-  const handleLogout = useCallback(async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      await signOut(getFirebaseAuth());
-      window.location.href = "/login";
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  }, []);
 
   return (
     <DashboardContext.Provider value={{ refreshStats, isObfuscated }}>
@@ -180,10 +184,26 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <SidebarFooter>
             <Separator className="bg-sidebar-border" />
             <div className="px-2 py-1">
+              <button
+                onClick={() => setProfileOpen(true)}
+                className="flex items-center gap-2 mb-2 w-full text-left hover:opacity-80 transition-opacity"
+              >
+                <Avatar className="size-6">
+                  {user.photoURL && (
+                    <AvatarImage src={user.photoURL} alt={user.displayName ?? ""} />
+                  )}
+                  <AvatarFallback className="text-[10px] bg-sidebar-accent text-sidebar-accent-foreground">
+                    {getInitials(user.displayName, user.email)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs text-sidebar-foreground/70 truncate">
+                  {user.displayName ?? user.email}
+                </span>
+              </button>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleLogout}
+                onClick={logout}
                 className="h-auto p-0 text-xs text-sidebar-foreground/70 hover:text-sidebar-primary hover:bg-transparent"
               >
                 Sign out
@@ -222,6 +242,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </header>
           <div className="p-4 lg:p-8">{children}</div>
         </SidebarInset>
+        <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
       </SidebarProvider>
     </DashboardContext.Provider>
   );
