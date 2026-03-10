@@ -65,7 +65,6 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [isObfuscated, setIsObfuscated] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [profileTab, setProfileTab] = useState<"profile" | "team">("profile");
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
@@ -186,8 +185,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             <Separator className="bg-sidebar-border" />
             <div className="px-2 py-1">
               <button
-                onClick={() => { setProfileTab("profile"); setProfileOpen(true); }}
-                className="flex items-center gap-2 w-full text-left hover:opacity-80 transition-opacity"
+                onClick={() => setProfileOpen(true)}
+                className="flex items-center gap-2 mb-2 w-full text-left hover:opacity-80 transition-opacity"
               >
                 <Avatar className="size-6">
                   {user.photoURL && (
@@ -200,12 +199,6 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 <span className="text-xs text-sidebar-foreground/70 truncate">
                   {user.displayName ?? user.email}
                 </span>
-              </button>
-              <button
-                onClick={() => { setProfileTab("team"); setProfileOpen(true); }}
-                className="text-[10px] text-sidebar-foreground/50 hover:text-sidebar-foreground/80 transition-colors truncate text-left pl-8 -mt-0.5 mb-1"
-              >
-                {user.teamRole === "owner" ? "Manage team" : "View team"}
               </button>
               <Button
                 variant="ghost"
@@ -249,7 +242,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </header>
           <div className="p-4 lg:p-8">{children}</div>
         </SidebarInset>
-        <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} defaultTab={profileTab} />
+        <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
       </SidebarProvider>
     </DashboardContext.Provider>
   );
