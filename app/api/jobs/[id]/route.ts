@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getJobById, updateJob, deleteJob } from '@/lib/jobs';
 import { UpdateJobSchema } from '@/lib/validations';
-import { withAuth } from '@/lib/auth';
+import { withAuth, assertCanWrite } from '@/lib/auth';
 
 export const GET = withAuth(async (request, { session, params }) => {
   try {
     const { id } = params;
-    const job = await getJobById(id, session.uid);
+    const job = await getJobById(id, session.activeTeamId);
 
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
@@ -19,6 +19,9 @@ export const GET = withAuth(async (request, { session, params }) => {
 });
 
 export const PUT = withAuth(async (request, { session, params }) => {
+  const denied = assertCanWrite(session);
+  if (denied) return denied;
+
   try {
     const { id } = params;
     const body = await request.json();
@@ -28,7 +31,7 @@ export const PUT = withAuth(async (request, { session, params }) => {
       applicationDate: body.applicationDate ? new Date(body.applicationDate) : undefined,
     });
 
-    const job = await updateJob(id, session.uid, validatedData);
+    const job = await updateJob(id, session.activeTeamId, validatedData);
     return NextResponse.json(job);
   } catch (error) {
     if (error instanceof Error) {
@@ -39,9 +42,12 @@ export const PUT = withAuth(async (request, { session, params }) => {
 });
 
 export const DELETE = withAuth(async (request, { session, params }) => {
+  const denied = assertCanWrite(session);
+  if (denied) return denied;
+
   try {
     const { id } = params;
-    await deleteJob(id, session.uid);
+    await deleteJob(id, session.activeTeamId);
     return NextResponse.json({ message: 'Job deleted successfully' });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete job' }, { status: 500 });

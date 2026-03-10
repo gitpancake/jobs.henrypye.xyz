@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { bulkCreateJobs } from '@/lib/jobs';
 import { BulkImportSchema } from '@/lib/validations';
-import { withAuth } from '@/lib/auth';
+import { withAuth, assertCanWrite } from '@/lib/auth';
 
 export const POST = withAuth(async (request, { session }) => {
+  const denied = assertCanWrite(session);
+  if (denied) return denied;
+
   try {
     const body = await request.json();
 
@@ -14,11 +17,11 @@ export const POST = withAuth(async (request, { session }) => {
       })),
     });
 
-    const createdJobs = await bulkCreateJobs(validatedData.jobs, session.uid);
-    
-    return NextResponse.json({ 
+    const createdJobs = await bulkCreateJobs(validatedData.jobs, session.activeTeamId);
+
+    return NextResponse.json({
       message: `Successfully imported ${createdJobs.length} jobs`,
-      jobs: createdJobs 
+      jobs: createdJobs
     }, { status: 201 });
   } catch (error) {
     if (error instanceof Error) {

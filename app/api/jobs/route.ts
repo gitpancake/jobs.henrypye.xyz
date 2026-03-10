@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getAllJobs, createJob } from '@/lib/jobs';
 import { CreateJobSchema } from '@/lib/validations';
-import { withAuth } from '@/lib/auth';
+import { withAuth, assertCanWrite } from '@/lib/auth';
 
 export const GET = withAuth(async (request, { session }) => {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as 'APPLIED' | 'INTERVIEWING' | 'ACCEPTED' | 'REJECTED' | null;
 
-    const jobs = await getAllJobs(session.uid, status || undefined);
+    const jobs = await getAllJobs(session.activeTeamId, status || undefined);
     return NextResponse.json(jobs);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
@@ -16,6 +16,9 @@ export const GET = withAuth(async (request, { session }) => {
 });
 
 export const POST = withAuth(async (request, { session }) => {
+  const denied = assertCanWrite(session);
+  if (denied) return denied;
+
   try {
     const body = await request.json();
 
@@ -24,7 +27,7 @@ export const POST = withAuth(async (request, { session }) => {
       applicationDate: body.applicationDate ? new Date(body.applicationDate) : undefined,
     });
 
-    const job = await createJob(validatedData, session.uid);
+    const job = await createJob(validatedData, session.activeTeamId);
     return NextResponse.json(job, { status: 201 });
   } catch (error) {
     if (error instanceof Error) {

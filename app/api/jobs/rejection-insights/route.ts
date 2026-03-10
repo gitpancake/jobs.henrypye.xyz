@@ -7,7 +7,7 @@ export const POST = withAuth(async (request, { session }) => {
   try {
     const rejectedJobs = await prisma.job.findMany({
       where: {
-        userId: session.uid,
+        teamId: session.activeTeamId,
         status: 'REJECTED',
         description: {
           not: null,
@@ -16,7 +16,6 @@ export const POST = withAuth(async (request, { session }) => {
       orderBy: { applicationDate: 'desc' },
     });
 
-    // Filter out jobs with empty descriptions
     const jobsWithDescriptions = rejectedJobs.filter(
       (job) => job.description && job.description.trim() !== ''
     );
@@ -28,7 +27,7 @@ export const POST = withAuth(async (request, { session }) => {
       );
     }
 
-    const cvContent = await getUserCV(session.uid);
+    const cvContent = await getUserCV(session.activeTeamId);
 
     const insights = await analyzeRejectionPatterns(
       jobsWithDescriptions,

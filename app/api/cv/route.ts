@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getUserCV, saveUserCV } from '@/lib/ai-service';
-import { withAuth } from '@/lib/auth';
+import { withAuth, assertCanWrite } from '@/lib/auth';
 
 export const GET = withAuth(async (request, { session }) => {
   try {
-    const cv = await getUserCV(session.uid);
+    const cv = await getUserCV(session.activeTeamId);
     return NextResponse.json({ content: cv });
   } catch (error) {
     console.error('Failed to get CV:', error);
@@ -13,6 +13,9 @@ export const GET = withAuth(async (request, { session }) => {
 });
 
 export const POST = withAuth(async (request, { session }) => {
+  const denied = assertCanWrite(session);
+  if (denied) return denied;
+
   try {
     const { content } = await request.json();
 
@@ -20,7 +23,7 @@ export const POST = withAuth(async (request, { session }) => {
       return NextResponse.json({ error: 'CV content is required' }, { status: 400 });
     }
 
-    await saveUserCV(content, session.uid);
+    await saveUserCV(content, session.activeTeamId);
     return NextResponse.json({ message: 'CV saved successfully' });
   } catch (error) {
     console.error('Failed to save CV:', error);

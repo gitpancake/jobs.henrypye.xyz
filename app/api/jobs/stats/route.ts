@@ -4,11 +4,11 @@ import { withAuth } from '@/lib/auth';
 
 export const GET = withAuth(async (request, { session }) => {
   try {
-    const stats = await getJobStats(session.uid);
+    const stats = await getJobStats(session.activeTeamId);
     return NextResponse.json(stats);
   } catch (error) {
     console.error('Job stats error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Failed to fetch job stats',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });

@@ -1,28 +1,20 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { analyzeJobDescription, getUserCV } from '@/lib/ai-service';
-import { withAuth } from '@/lib/auth';
+import { withAuth, assertCanWrite } from '@/lib/auth';
 
 export const POST = withAuth(async (request, { session }) => {
+  const denied = assertCanWrite(session);
+  if (denied) return denied;
+
   try {
-    // Get all jobs that have descriptions but haven't been analyzed yet
     const jobsToAnalyze = await prisma.job.findMany({
       where: {
-        userId: session.uid,
+        teamId: session.activeTeamId,
         AND: [
-          {
-            description: {
-              not: null
-            }
-          },
-          {
-            description: {
-              not: ''
-            }
-          },
-          {
-            aiAnalyzedAt: null
-          }
+          { description: { not: null } },
+          { description: { not: '' } },
+          { aiAnalyzedAt: null }
         ]
       },
       select: {
@@ -34,35 +26,30 @@ export const POST = withAuth(async (request, { session }) => {
     });
 
     if (jobsToAnalyze.length === 0) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: 'No jobs found that need analysis.',
         analyzed: 0,
         total: 0
       });
     }
 
-    // Get user's CV once for all analyses
-    const cvContent = await getUserCV(session.uid);
+    const cvContent = await getUserCV(session.activeTeamId);
 
     let successCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
 
-    // Process jobs in small batches to avoid overwhelming the API
     const BATCH_SIZE = 3;
     for (let i = 0; i < jobsToAnalyze.length; i += BATCH_SIZE) {
       const batch = jobsToAnalyze.slice(i, i + BATCH_SIZE);
-      
-      // Process batch concurrently but with controlled concurrency
+
       await Promise.allSettled(
         batch.map(async (job) => {
           try {
             if (!job.description) return;
-            
-            // Perform AI analysis
+
             const analysis = await analyzeJobDescription(job.description, cvContent || undefined);
-            
-            // Update job with analysis results
+
             await prisma.job.update({
               where: { id: job.id },
               data: {
@@ -79,7 +66,7 @@ export const POST = withAuth(async (request, { session }) => {
                 aiAnalyzedAt: new Date(),
               }
             });
-            
+
             successCount++;
           } catch (error) {
             errorCount++;
@@ -89,7 +76,6 @@ export const POST = withAuth(async (request, { session }) => {
         })
       );
 
-      // Small delay between batches to be respectful to the API
       if (i + BATCH_SIZE < jobsToAnalyze.length) {
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
@@ -105,23 +91,23 @@ export const POST = withAuth(async (request, { session }) => {
 
   } catch (error) {
     console.error('Batch analysis failed:', error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('ANTHROPIC_API_KEY')) {
-        return NextResponse.json({ 
-          error: 'AI service not configured. Please add your Anthropic API key.' 
+        return NextResponse.json({
+          error: 'AI service not configured. Please add your Anthropic API key.'
         }, { status: 500 });
       }
-      
+
       if (error.message.includes('connection pool') || error.message.includes('Timed out')) {
-        return NextResponse.json({ 
-          error: 'Database connection timeout. Please try again in a moment.' 
+        return NextResponse.json({
+          error: 'Database connection timeout. Please try again in a moment.'
         }, { status: 503 });
       }
     }
-    
-    return NextResponse.json({ 
-      error: 'Batch analysis failed. Please try again.' 
+
+    return NextResponse.json({
+      error: 'Batch analysis failed. Please try again.'
     }, { status: 500 });
   }
 });

@@ -1,28 +1,29 @@
 import { prisma } from './prisma';
 import { Job, CreateJobInput, UpdateJobInput, JobStatus, BulkImportJob } from './types';
 
-export async function getAllJobs(userId: string, status?: JobStatus): Promise<Job[]> {
+export async function getAllJobs(teamId: string, status?: JobStatus): Promise<Job[]> {
   const jobs = await prisma.job.findMany({
-    where: { userId, ...(status ? { status } : {}) },
+    where: { teamId, ...(status ? { status } : {}) },
     orderBy: { applicationDate: 'desc' },
   });
 
   return jobs;
 }
 
-export async function getJobById(id: string, userId: string): Promise<Job | null> {
+export async function getJobById(id: string, teamId: string): Promise<Job | null> {
   const job = await prisma.job.findFirst({
-    where: { id, userId },
+    where: { id, teamId },
   });
 
   return job;
 }
 
-export async function createJob(data: CreateJobInput, userId: string): Promise<Job> {
+export async function createJob(data: CreateJobInput, teamId: string): Promise<Job> {
   const job = await prisma.job.create({
     data: {
       ...data,
-      userId,
+      teamId,
+      userId: "", // Legacy field, kept for backwards compat
       applicationDate: data.applicationDate || new Date(),
       hasMessagedContact: data.hasMessagedContact || false,
     },
@@ -31,7 +32,7 @@ export async function createJob(data: CreateJobInput, userId: string): Promise<J
   return job;
 }
 
-export async function updateJob(id: string, userId: string, data: UpdateJobInput): Promise<Job> {
+export async function updateJob(id: string, teamId: string, data: UpdateJobInput): Promise<Job> {
   const job = await prisma.job.update({
     where: { id },
     data,
@@ -40,17 +41,18 @@ export async function updateJob(id: string, userId: string, data: UpdateJobInput
   return job;
 }
 
-export async function deleteJob(id: string, userId: string): Promise<void> {
+export async function deleteJob(id: string, teamId: string): Promise<void> {
   await prisma.job.deleteMany({
-    where: { id, userId },
+    where: { id, teamId },
   });
 }
 
-export async function bulkCreateJobs(jobs: BulkImportJob[], userId: string): Promise<Job[]> {
+export async function bulkCreateJobs(jobs: BulkImportJob[], teamId: string): Promise<Job[]> {
   const created = await prisma.$transaction(
     jobs.map(job => prisma.job.create({
       data: {
-        userId,
+        teamId,
+        userId: "", // Legacy field
         title: job.title,
         company: job.company,
         applicationDate: job.applicationDate || new Date(),
@@ -65,13 +67,13 @@ export async function bulkCreateJobs(jobs: BulkImportJob[], userId: string): Pro
   return created;
 }
 
-export async function getJobStats(userId: string) {
+export async function getJobStats(teamId: string) {
   const [total, applied, interviewing, accepted, rejected] = await Promise.all([
-    prisma.job.count({ where: { userId } }),
-    prisma.job.count({ where: { userId, status: 'APPLIED' } }),
-    prisma.job.count({ where: { userId, status: 'INTERVIEWING' } }),
-    prisma.job.count({ where: { userId, status: 'ACCEPTED' } }),
-    prisma.job.count({ where: { userId, status: 'REJECTED' } }),
+    prisma.job.count({ where: { teamId } }),
+    prisma.job.count({ where: { teamId, status: 'APPLIED' } }),
+    prisma.job.count({ where: { teamId, status: 'INTERVIEWING' } }),
+    prisma.job.count({ where: { teamId, status: 'ACCEPTED' } }),
+    prisma.job.count({ where: { teamId, status: 'REJECTED' } }),
   ]);
 
   return {

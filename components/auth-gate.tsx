@@ -38,6 +38,9 @@ export default function AuthGate({ children }: { children: ReactNode }) {
             email: d.email,
             displayName: d.displayName,
             photoURL: d.photoURL,
+            sharedUserId: d.sharedUserId,
+            activeTeamId: d.activeTeamId,
+            teamRole: d.teamRole,
           });
           setStatus("unlocked");
         } else {
@@ -69,6 +72,9 @@ export default function AuthGate({ children }: { children: ReactNode }) {
           email: d.email,
           displayName: d.displayName,
           photoURL: d.photoURL,
+          sharedUserId: d.sharedUserId,
+          activeTeamId: d.activeTeamId,
+          teamRole: d.teamRole,
         });
         setStatus("unlocked");
       } else {

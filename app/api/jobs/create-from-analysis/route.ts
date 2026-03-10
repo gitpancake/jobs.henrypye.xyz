@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withAuth } from '@/lib/auth';
+import { withAuth, assertCanWrite } from '@/lib/auth';
 
 export const POST = withAuth(async (request, { session }) => {
+  const denied = assertCanWrite(session);
+  if (denied) return denied;
+
   try {
     const { description, analysis } = await request.json();
 
@@ -13,19 +16,15 @@ export const POST = withAuth(async (request, { session }) => {
       );
     }
 
-    // Extract job information from the description using simple parsing
-    // Look for common patterns in job descriptions
     const lines = description.split('\n').map((line: string) => line.trim()).filter(Boolean);
 
     let title = '';
     let company = '';
     let location = '';
 
-    // Try to extract title and company from the first few lines
     for (let i = 0; i < Math.min(5, lines.length); i++) {
       const line = lines[i];
 
-      // Common patterns for job titles
       if (!title && (
         line.toLowerCase().includes('position:') ||
         line.toLowerCase().includes('role:') ||
@@ -37,7 +36,6 @@ export const POST = withAuth(async (request, { session }) => {
         title = line.replace(/^(position:|role:|job title:)/i, '').trim();
       }
 
-      // Common patterns for company names
       if (!company && (
         line.toLowerCase().includes('company:') ||
         line.toLowerCase().includes('organization:') ||
@@ -47,30 +45,28 @@ export const POST = withAuth(async (request, { session }) => {
         company = line.replace(/^(company:|organization:|at )/i, '').trim();
       }
 
-      // Common patterns for location
       if (!location && (
         line.toLowerCase().includes('location:') ||
         line.toLowerCase().includes('based in') ||
         line.toLowerCase().includes('remote') ||
-        /\b\w+,\s*\w+\b/.test(line) // City, State pattern
+        /\b\w+,\s*\w+\b/.test(line)
       )) {
         location = line.replace(/^location:/i, '').trim();
       }
     }
 
-    // Fallback extraction if patterns don't work
     if (!title && lines.length > 0) {
-      title = lines[0].length < 100 ? lines[0] : 'Software Engineer'; // Default fallback
+      title = lines[0].length < 100 ? lines[0] : 'Software Engineer';
     }
 
     if (!company && lines.length > 1) {
       company = lines[1].length < 50 ? lines[1] : 'Company';
     }
 
-    // Create the job entry
     const newJob = await prisma.job.create({
       data: {
-        userId: session.uid,
+        userId: "",
+        teamId: session.activeTeamId,
         title: title || 'Software Engineer',
         company: company || 'Company',
         description: description,
@@ -78,24 +74,20 @@ export const POST = withAuth(async (request, { session }) => {
         applicationDate: new Date(),
         status: 'APPLIED',
 
-        // AI Analysis data
         aiAnalyzedAt: new Date(),
         suitabilityScore: analysis.suitabilityScore || null,
         suitabilityReason: analysis.suitabilityReason || null,
         suggestedNextSteps: analysis.coverLetterSuggestions?.bodyPoints || [],
 
-        // Salary information if available
         salaryMin: analysis.salaryRange?.min || null,
         salaryMax: analysis.salaryRange?.max || null,
         salaryCurrency: analysis.salaryRange?.currency || null,
 
-        // Additional extracted info
         responsibilities: analysis.responsibilities || [],
         requirements: analysis.requirements || [],
-        benefits: [], // benefits not provided in the analysis structure
-        workArrangement: null, // Could be extracted from location or description
+        benefits: [],
+        workArrangement: null,
 
-        // Default values for other fields
         hasMessagedContact: false,
         linkedinContactUrl: null,
         linkedinContactName: null,

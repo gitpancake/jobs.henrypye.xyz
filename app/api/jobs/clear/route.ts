@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withAuth } from '@/lib/auth';
+import { withAuth, assertCanWrite } from '@/lib/auth';
 
 export const DELETE = withAuth(async (request, { session }) => {
+  const denied = assertCanWrite(session);
+  if (denied) return denied;
+
   try {
-    const result = await prisma.job.deleteMany({ where: { userId: session.uid } });
-    
-    return NextResponse.json({ 
+    const result = await prisma.job.deleteMany({ where: { teamId: session.activeTeamId } });
+
+    return NextResponse.json({
       message: `Successfully deleted ${result.count} jobs`,
-      deletedCount: result.count 
+      deletedCount: result.count
     }, { status: 200 });
   } catch (error) {
     console.error('Failed to clear jobs:', error);

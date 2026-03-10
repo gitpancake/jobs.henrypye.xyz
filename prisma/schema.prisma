@@ -18,6 +18,7 @@ enum JobStatus {
 model Job {
   id                    String     @id @default(cuid())
   userId                String     @map("user_id")
+  teamId                String     @map("team_id") @db.Uuid
   title                 String
   company               String
   description           String?
@@ -28,7 +29,7 @@ model Job {
   linkedinContactName   String?
   hasMessagedContact    Boolean    @default(false)
   notes                 String?
-  
+
   // AI Analysis Fields
   salaryMin             Int?
   salaryMax             Int?
@@ -41,7 +42,7 @@ model Job {
   suitabilityReason     String?
   suggestedNextSteps    String[]   @default([])
   aiAnalyzedAt          DateTime?
-  
+
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
 
@@ -51,9 +52,73 @@ model Job {
 model UserCV {
   id          String   @id @default(cuid())
   userId      String   @map("user_id")
+  teamId      String   @map("team_id") @db.Uuid
   content     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("user_cv")
+}
+
+// ─── Shared tables (source of truth in shelby) ─────────────
+
+model SharedUser {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firebaseUid String   @unique @map("firebase_uid")
+  email       String
+  displayName String?  @map("display_name")
+  photoUrl    String?  @map("photo_url")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  memberships SharedTeamMember[]
+  createdTeams SharedTeam[] @relation("CreatedTeams")
+  invitesSent SharedTeamInvite[] @relation("InvitesSent")
+
+  @@map("shared_users")
+}
+
+model SharedTeam {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  creator  SharedUser         @relation("CreatedTeams", fields: [createdBy], references: [id])
+  members  SharedTeamMember[]
+  invites  SharedTeamInvite[]
+
+  @@map("shared_teams")
+}
+
+model SharedTeamMember {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teamId   String   @map("team_id") @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  role     String
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz
+
+  team SharedTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user SharedUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId], name: "teamId_userId")
+  @@map("shared_team_members")
+}
+
+model SharedTeamInvite {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teamId     String    @map("team_id") @db.Uuid
+  invitedBy  String    @map("invited_by") @db.Uuid
+  email      String
+  role       String
+  token      String    @unique
+  acceptedAt DateTime? @map("accepted_at") @db.Timestamptz
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  team    SharedTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  inviter SharedUser @relation("InvitesSent", fields: [invitedBy], references: [id])
+
+  @@unique([teamId, email], name: "teamId_email")
+  @@map("shared_team_invites")
 }
