@@ -3,11 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { analyzeJobDescription, getUserCV } from '@/lib/ai-service';
 import { withAuth } from '@/lib/auth';
 
-export const POST = withAuth(async () => {
+export const POST = withAuth(async (request, { session }) => {
   try {
     // Get all jobs that have descriptions but haven't been analyzed yet
     const jobsToAnalyze = await prisma.job.findMany({
       where: {
+        userId: session.uid,
         AND: [
           {
             description: {
@@ -41,7 +42,7 @@ export const POST = withAuth(async () => {
     }
 
     // Get user's CV once for all analyses
-    const cvContent = await getUserCV();
+    const cvContent = await getUserCV(session.uid);
 
     let successCount = 0;
     let errorCount = 0;

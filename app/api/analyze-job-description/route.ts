@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { analyzeJobDescription, getUserCV } from '@/lib/ai-service';
+import { withAuth } from '@/lib/auth';
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request, { session }) => {
   try {
     const { description } = await request.json();
 
@@ -13,11 +14,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's CV for personalized analysis
-    const cvContent = await getUserCV();
-    
+    const cvContent = await getUserCV(session.uid);
+
     // Analyze the job description
     const analysis = await analyzeJobDescription(description, cvContent || undefined);
-    
+
     // Transform the analysis result to match the modal interface
     const result = {
       suitabilityScore: analysis.suitabilityScore || 0,
@@ -45,17 +46,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error('Job description analysis error:', error);
-    
+
     if (error instanceof Error) {
       return NextResponse.json(
         { error: error.message },
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Failed to analyze job description' },
       { status: 500 }
     );
   }
-}
+});

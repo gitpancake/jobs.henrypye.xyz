@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { withAuth } from '@/lib/auth';
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request, { session }) => {
   try {
     const { description, analysis } = await request.json();
 
@@ -15,15 +16,15 @@ export async function POST(request: NextRequest) {
     // Extract job information from the description using simple parsing
     // Look for common patterns in job descriptions
     const lines = description.split('\n').map((line: string) => line.trim()).filter(Boolean);
-    
+
     let title = '';
     let company = '';
     let location = '';
-    
+
     // Try to extract title and company from the first few lines
     for (let i = 0; i < Math.min(5, lines.length); i++) {
       const line = lines[i];
-      
+
       // Common patterns for job titles
       if (!title && (
         line.toLowerCase().includes('position:') ||
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       )) {
         title = line.replace(/^(position:|role:|job title:)/i, '').trim();
       }
-      
+
       // Common patterns for company names
       if (!company && (
         line.toLowerCase().includes('company:') ||
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       )) {
         company = line.replace(/^(company:|organization:|at )/i, '').trim();
       }
-      
+
       // Common patterns for location
       if (!location && (
         line.toLowerCase().includes('location:') ||
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     if (!title && lines.length > 0) {
       title = lines[0].length < 100 ? lines[0] : 'Software Engineer'; // Default fallback
     }
-    
+
     if (!company && lines.length > 1) {
       company = lines[1].length < 50 ? lines[1] : 'Company';
     }
@@ -69,30 +70,31 @@ export async function POST(request: NextRequest) {
     // Create the job entry
     const newJob = await prisma.job.create({
       data: {
+        userId: session.uid,
         title: title || 'Software Engineer',
         company: company || 'Company',
         description: description,
         location: location || null,
         applicationDate: new Date(),
         status: 'APPLIED',
-        
+
         // AI Analysis data
         aiAnalyzedAt: new Date(),
         suitabilityScore: analysis.suitabilityScore || null,
         suitabilityReason: analysis.suitabilityReason || null,
         suggestedNextSteps: analysis.coverLetterSuggestions?.bodyPoints || [],
-        
+
         // Salary information if available
         salaryMin: analysis.salaryRange?.min || null,
         salaryMax: analysis.salaryRange?.max || null,
         salaryCurrency: analysis.salaryRange?.currency || null,
-        
+
         // Additional extracted info
         responsibilities: analysis.responsibilities || [],
         requirements: analysis.requirements || [],
         benefits: [], // benefits not provided in the analysis structure
         workArrangement: null, // Could be extracted from location or description
-        
+
         // Default values for other fields
         hasMessagedContact: false,
         linkedinContactUrl: null,
@@ -104,17 +106,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newJob, { status: 201 });
   } catch (error) {
     console.error('Error creating job from analysis:', error);
-    
+
     if (error instanceof Error) {
       return NextResponse.json(
         { error: error.message },
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Failed to create job application' },
       { status: 500 }
     );
   }
-}
+});

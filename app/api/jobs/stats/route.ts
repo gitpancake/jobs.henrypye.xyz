@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import { getJobStats } from '@/lib/jobs';
 import { withAuth } from '@/lib/auth';
 
-export const GET = withAuth(async () => {
+export const GET = withAuth(async (request, { session }) => {
   try {
-    const stats = await getJobStats();
+    const stats = await getJobStats(session.uid);
     return NextResponse.json(stats);
   } catch (error) {
     console.error('Job stats error:', error);

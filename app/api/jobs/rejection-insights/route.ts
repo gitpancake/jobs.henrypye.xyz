@@ -3,10 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { analyzeRejectionPatterns, getUserCV } from '@/lib/ai-service';
 import { withAuth } from '@/lib/auth';
 
-export const POST = withAuth(async () => {
+export const POST = withAuth(async (request, { session }) => {
   try {
     const rejectedJobs = await prisma.job.findMany({
       where: {
+        userId: session.uid,
         status: 'REJECTED',
         description: {
           not: null,
@@ -27,7 +28,7 @@ export const POST = withAuth(async () => {
       );
     }
 
-    const cvContent = await getUserCV();
+    const cvContent = await getUserCV(session.uid);
 
     const insights = await analyzeRejectionPatterns(
       jobsWithDescriptions,

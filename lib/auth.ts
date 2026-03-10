@@ -57,16 +57,17 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 export function withAuth(
-  handler: (request: Request, context?: any) => Promise<Response>
+  handler: (request: Request, context: { session: SessionUser; params?: any }) => Promise<Response>
 ) {
-  return async (request: Request, context?: any): Promise<Response> => {
-    const authenticated = await isAuthenticated();
-    if (!authenticated) {
+  return async (request: Request, routeContext?: any): Promise<Response> => {
+    const session = await getSession();
+    if (!session) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
     }
-    return handler(request, context);
+    const params = routeContext?.params ? await routeContext.params : undefined;
+    return handler(request, { session, params });
   };
 }

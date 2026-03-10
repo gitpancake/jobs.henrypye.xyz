@@ -365,10 +365,11 @@ IMPORTANT:
     }
 }
 
-export async function getUserCV(): Promise<string | null> {
+export async function getUserCV(userId: string): Promise<string | null> {
     try {
         const { prisma } = await import("./prisma");
         const cv = await prisma.userCV.findFirst({
+            where: { userId },
             orderBy: { updatedAt: "desc" },
         });
         return cv?.content || null;
@@ -378,14 +379,14 @@ export async function getUserCV(): Promise<string | null> {
     }
 }
 
-export async function saveUserCV(content: string): Promise<void> {
+export async function saveUserCV(content: string, userId: string): Promise<void> {
     try {
         const { prisma } = await import("./prisma");
 
-        // Delete existing CV and create new one (single CV per user)
-        await prisma.userCV.deleteMany({});
+        // Delete existing CV for this user and create new one (single CV per user)
+        await prisma.userCV.deleteMany({ where: { userId } });
         await prisma.userCV.create({
-            data: { content },
+            data: { content, userId },
         });
     } catch (error) {
         console.error("Failed to save CV:", error);

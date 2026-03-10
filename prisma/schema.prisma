@@ -17,6 +17,7 @@ enum JobStatus {
 
 model Job {
   id                    String     @id @default(cuid())
+  userId                String     @map("user_id")
   title                 String
   company               String
   description           String?
@@ -49,6 +50,7 @@ model Job {
 
 model UserCV {
   id          String   @id @default(cuid())
+  userId      String   @map("user_id")
   content     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

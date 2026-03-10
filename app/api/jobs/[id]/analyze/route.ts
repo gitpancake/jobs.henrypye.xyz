@@ -3,17 +3,14 @@ import { prisma } from '@/lib/prisma';
 import { analyzeJobDescription, getUserCV } from '@/lib/ai-service';
 import { withAuth } from '@/lib/auth';
 
-export const POST = withAuth(async (
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) => {
-  const { id: jobId } = await params;
-  
+export const POST = withAuth(async (request, { session, params }) => {
+  const { id: jobId } = params;
+
   try {
-    
-    // Get the job
-    const job = await prisma.job.findUnique({
-      where: { id: jobId }
+
+    // Get the job (scoped to user)
+    const job = await prisma.job.findFirst({
+      where: { id: jobId, userId: session.uid }
     });
     
     if (!job) {
@@ -25,7 +22,7 @@ export const POST = withAuth(async (
     }
     
     // Get user's CV for suitability analysis
-    const cvContent = await getUserCV();
+    const cvContent = await getUserCV(session.uid);
     
     // Perform AI analysis
     const analysis = await analyzeJobDescription(job.description, cvContent || undefined);

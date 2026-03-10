@@ -3,18 +3,18 @@ import { bulkCreateJobs } from '@/lib/jobs';
 import { BulkImportSchema } from '@/lib/validations';
 import { withAuth } from '@/lib/auth';
 
-export const POST = withAuth(async (request: Request) => {
+export const POST = withAuth(async (request, { session }) => {
   try {
     const body = await request.json();
-    
+
     const validatedData = BulkImportSchema.parse({
       jobs: body.jobs.map((job: { applicationDate: string | Date; [key: string]: unknown }) => ({
         ...job,
         applicationDate: new Date(job.applicationDate),
       })),
     });
-    
-    const createdJobs = await bulkCreateJobs(validatedData.jobs);
+
+    const createdJobs = await bulkCreateJobs(validatedData.jobs, session.uid);
     
     return NextResponse.json({ 
       message: `Successfully imported ${createdJobs.length} jobs`,
