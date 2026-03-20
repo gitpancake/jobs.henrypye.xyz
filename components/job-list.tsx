@@ -7,6 +7,8 @@ import { Search, Calendar, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { StatusFilterCombobox } from '@/components/status-filter-combobox';
+import { DateFilterCombobox } from '@/components/date-filter-combobox';
 
 interface JobListProps {
   jobs: Job[];
@@ -177,35 +179,17 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
       {/* Date Filters */}
       <div className="space-y-3">
         <div className="flex items-center gap-3 flex-wrap">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-foreground font-medium">Date Filters:</span>
+          <span className="text-sm text-foreground font-medium">Date:</span>
           
-          {/* Preset Date Filters */}
-          <div className="flex gap-2 flex-wrap">
-            {[
-              { value: 'today', label: 'Today' },
-              { value: 'yesterday', label: 'Yesterday' },
-              { value: 'last7days', label: 'Last 7 Days' },
-              { value: 'last30days', label: 'Last 30 Days' },
-              { value: 'thisweek', label: 'This Week' },
-              { value: 'thismonth', label: 'This Month' },
-            ].map(preset => (
-              <button
-                key={preset.value}
-                onClick={() => {
-                  setDateFilter(preset.value === dateFilter ? '' : preset.value);
-                  setDateRange({start: '', end: ''}); // Clear custom range
-                }}
-                className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                  dateFilter === preset.value
-                    ? 'bg-primary text-primary-foreground border border-primary'
-                    : 'bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80'
-                }`}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
+          <DateFilterCombobox
+            value={dateFilter}
+            onValueChange={(value) => {
+              setDateFilter(value);
+              setDateRange({start: '', end: ''}); // Clear custom range
+            }}
+            hasCustomRange={!!(dateRange.start || dateRange.end)}
+            className="w-[140px]"
+          />
 
           <div className="h-4 w-px bg-border" />
 
@@ -289,34 +273,17 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
         )}
       </div>
 
-      {/* Filter Buttons */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => setFilter('ALL')}
-          className={`px-3 py-1 text-sm rounded-full transition-colors ${
-            filter === 'ALL'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-          }`}
-        >
-          All ({jobs.length})
-        </button>
-        {statusOptions.map(status => {
-          const count = jobs.filter(job => job.status === status).length;
-          return (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                filter === status
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-              }`}
-            >
-              {status.replace('_', ' ')} ({count})
-            </button>
-          );
-        })}
+      {/* Status Filter */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-sm text-foreground font-medium">Status:</span>
+        <StatusFilterCombobox
+          value={filter}
+          onValueChange={(status) => setFilter(status)}
+          className="w-[160px]"
+        />
+        <span className="text-sm text-muted-foreground">
+          ({filter === 'ALL' ? jobs.length : jobs.filter(job => job.status === filter).length} jobs)
+        </span>
       </div>
 
       {/* Secondary Filter - No AI Analysis */}
