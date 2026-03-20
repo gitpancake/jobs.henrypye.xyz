@@ -105,3 +105,83 @@ export async function getJobStats(teamId: string) {
     archived,
   };
 }
+
+export async function getJobAnalytics(teamId: string) {
+  // Get all jobs for analysis
+  const jobs = await prisma.job.findMany({
+    where: { teamId, archived: false },
+    orderBy: { applicationDate: 'asc' },
+  });
+
+  // Calculate basic metrics
+  const total = jobs.length;
+  const accepted = jobs.filter(job => job.status === 'ACCEPTED').length;
+  const interviewing = jobs.filter(job => job.status === 'INTERVIEWING').length;
+  const rejected = jobs.filter(job => job.status === 'REJECTED').length;
+
+  const successRate = total > 0 ? (accepted / total) * 100 : 0;
+  const responseRate = total > 0 ? ((interviewing + accepted) / total) * 100 : 0;
+
+  // Calculate average response time (simplified - assumes all jobs get responses)
+  const averageResponseTime = 7; // Placeholder - would need interview/response dates in real implementation
+
+  // Get monthly trends
+  const now = new Date();
+  const monthlyData: { [key: string]: { applied: number; interviewing: number; accepted: number; rejected: number } } = {};
+  
+  // Initialize last 12 months
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+    monthlyData[monthKey] = { applied: 0, interviewing: 0, accepted: 0, rejected: 0 };
+  }
+
+  // Aggregate jobs by month
+  jobs.forEach(job => {
+    const applicationDate = new Date(job.applicationDate);
+    const monthKey = applicationDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+    
+    if (monthlyData[monthKey]) {
+      if (job.status === 'APPLIED') monthlyData[monthKey].applied++;
+      else if (job.status === 'INTERVIEWING') monthlyData[monthKey].interviewing++;
+      else if (job.status === 'ACCEPTED') monthlyData[monthKey].accepted++;
+      else if (job.status === 'REJECTED') monthlyData[monthKey].rejected++;
+    }
+  });
+
+  const monthlyTrends = Object.entries(monthlyData).map(([month, data]) => ({
+    month,
+    ...data
+  }));
+
+  // Top companies
+  const companyCounts: { [key: string]: number } = {};
+  jobs.forEach(job => {
+    companyCounts[job.company] = (companyCounts[job.company] || 0) + 1;
+  });
+
+  const topCompanies = Object.entries(companyCounts)
+    .map(([company, count]) => ({ company, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // Top locations
+  const locationCounts: { [key: string]: number } = {};
+  jobs.forEach(job => {
+    if (job.location) {
+      locationCounts[job.location] = (locationCounts[job.location] || 0) + 1;
+    }
+  });
+
+  const topLocations = Object.entries(locationCounts)
+    .map(([location, count]) => ({ location, count }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    averageResponseTime,
+    successRate,
+    responseRate,
+    topCompanies,
+    topLocations,
+    monthlyTrends,
+  };
+}

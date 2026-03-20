@@ -10,6 +10,7 @@ import {
   Sparkles,
   FileText,
   Upload,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -56,6 +57,7 @@ function getInitials(name: string | null, email: string): string {
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/analyzer", label: "Job Fit Analyzer", icon: Sparkles },
   { href: "/cv", label: "Manage CV", icon: FileText },
   { href: "/bulk-import", label: "Bulk Import", icon: Upload },
@@ -111,7 +113,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             </SidebarGroup>
             {stats && (
               <SidebarGroup>
-                <SidebarGroupLabel>Analytics</SidebarGroupLabel>
+                <SidebarGroupLabel>Quick Stats</SidebarGroupLabel>
                 <div className="px-3 space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-sidebar-foreground/70">Total</span>
@@ -120,41 +122,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-sidebar-foreground/70">Applied</span>
+                    <span className="text-sidebar-foreground/70">Active</span>
                     <span className="font-mono font-semibold text-blue-400">
-                      {stats.applied}
+                      {stats.applied + stats.interviewing}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-sidebar-foreground/70">
-                      Interviewing
-                    </span>
-                    <span className="font-mono font-semibold text-yellow-400">
-                      {stats.interviewing}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-sidebar-foreground/70">Accepted</span>
-                    <span className="font-mono font-semibold text-green-400">
-                      {stats.accepted}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-sidebar-foreground/70">Rejected</span>
-                    <span className="font-mono font-semibold text-red-400">
-                      {stats.rejected}
-                    </span>
-                  </div>
-                  {stats.rejected > 0 && (
-                    <Link
-                      href="/insights"
-                      className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors mt-1"
-                    >
-                      <Lightbulb className="h-3.5 w-3.5" />
-                      Rejection Insights
-                    </Link>
-                  )}
-                  <Separator className="bg-sidebar-border my-2" />
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-sidebar-foreground/70">Success</span>
                     <span className="font-mono font-semibold text-green-400">
@@ -164,19 +136,15 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                       %
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-sidebar-foreground/70">Response</span>
-                    <span className="font-mono font-semibold text-blue-400">
-                      {stats.total > 0
-                        ? (
-                            ((stats.interviewing + stats.accepted) /
-                              stats.total) *
-                            100
-                          ).toFixed(1)
-                        : "0.0"}
-                      %
-                    </span>
-                  </div>
+                  {stats.rejected > 0 && (
+                    <Link
+                      href="/insights"
+                      className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors mt-1"
+                    >
+                      <Lightbulb className="h-3.5 w-3.5" />
+                      View Insights
+                    </Link>
+                  )}
                 </div>
               </SidebarGroup>
             )}
