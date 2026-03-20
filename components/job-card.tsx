@@ -7,6 +7,7 @@ import { Pencil, Trash2, Copy, ExternalLink, Sparkles, ChevronDown, ChevronRight
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/animate-ui/components/buttons/button';
+import { StatusCombobox } from '@/components/status-combobox';
 
 interface JobCardProps {
   job: Job;
@@ -25,7 +26,6 @@ const statusColors: Record<JobStatus, string> = {
   REJECTED: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
-const statusOptions: JobStatus[] = ['APPLIED', 'INTERVIEWING', 'ACCEPTED', 'REJECTED'];
 
 export const JobCard = memo(function JobCard({ 
   job, 
@@ -209,18 +209,10 @@ export const JobCard = memo(function JobCard({
         </div>
         
         <div className="flex items-center gap-1 ml-4">
-          <select
+          <StatusCombobox
             value={job.status}
-            onChange={(e) => onStatusChange(job.id, e.target.value as JobStatus)}
-            className="text-sm text-foreground bg-background border rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-ring"
-            aria-label={`Change status for ${job.title} at ${job.company}`}
-          >
-            {statusOptions.map(status => (
-              <option key={status} value={status}>
-                {status.replace('_', ' ')}
-              </option>
-            ))}
-          </select>
+            onValueChange={(status) => onStatusChange(job.id, status)}
+          />
 
           {onAnalyze && job.description && (
             <Button

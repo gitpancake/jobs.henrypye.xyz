@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateJobSchema, CreateJobFormData } from '@/lib/validations';
 import { Job } from '@/lib/types';
@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/animate-ui/components/buttons/button';
+import { DateCombobox } from '@/components/date-combobox';
+import { StatusCombobox } from '@/components/status-combobox';
 
 interface JobFormProps {
   onSubmit: (data: CreateJobFormData) => void;
@@ -19,6 +21,7 @@ export function JobForm({ onSubmit, initialData, isSubmitting = false }: JobForm
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
   } = useForm<CreateJobFormData>({
@@ -28,6 +31,7 @@ export function JobForm({ onSubmit, initialData, isSubmitting = false }: JobForm
       company: initialData?.company || '',
       description: initialData?.description || '',
       location: initialData?.location || '',
+      applicationDate: initialData?.applicationDate || new Date(),
       linkedinContactUrl: initialData?.linkedinContactUrl || '',
       linkedinContactName: initialData?.linkedinContactName || '',
       hasMessagedContact: initialData?.hasMessagedContact || false,
@@ -44,7 +48,7 @@ export function JobForm({ onSubmit, initialData, isSubmitting = false }: JobForm
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="title">Job Title *</Label>
           <Input
@@ -66,6 +70,24 @@ export function JobForm({ onSubmit, initialData, isSubmitting = false }: JobForm
           />
           {errors.company && (
             <p className="text-sm text-destructive">{errors.company.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Application Date</Label>
+          <Controller
+            name="applicationDate"
+            control={control}
+            render={({ field }) => (
+              <DateCombobox
+                value={field.value}
+                onValueChange={field.onChange}
+                placeholder="Select application date"
+              />
+            )}
+          />
+          {errors.applicationDate && (
+            <p className="text-sm text-destructive">{errors.applicationDate.message}</p>
           )}
         </div>
       </div>
