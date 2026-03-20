@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { DateRange } from 'react-day-picker';
 import { Job, JobStatus } from '@/lib/types';
 import { JobCard } from './job-card';
 import { Search, Calendar, X } from 'lucide-react';
@@ -9,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatusFilterCombobox } from '@/components/status-filter-combobox';
 import { DateFilterCombobox } from '@/components/date-filter-combobox';
+import { DateRangePicker } from '@/components/date-range-picker';
 
 interface JobListProps {
   jobs: Job[];
@@ -31,7 +33,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
   
   // Date filtering state
   const [dateFilter, setDateFilter] = useState<string>('');
-  const [dateRange, setDateRange] = useState<{start: string, end: string}>({start: '', end: ''});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Clear recently analyzed job when filters change
@@ -50,7 +52,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
     }
 
     // Apply date filters
-    if (dateFilter || (dateRange.start || dateRange.end)) {
+    if (dateFilter || dateRange) {
       filtered = filtered.filter(job => {
         const jobDate = new Date(job.applicationDate);
         
@@ -93,20 +95,16 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
         }
         
         // Apply custom date range
-        let matchesStart = true;
-        let matchesEnd = true;
-        
-        if (dateRange.start) {
-          const startDate = new Date(dateRange.start);
-          matchesStart = jobDate >= startDate;
+        if (dateRange?.from) {
+          const startDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          const endDate = dateRange.to ? 
+            new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate(), 23, 59, 59) : 
+            new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate(), 23, 59, 59);
+          
+          return jobDate >= startDate && jobDate <= endDate;
         }
         
-        if (dateRange.end) {
-          const endDate = new Date(dateRange.end + 'T23:59:59'); // End of day
-          matchesEnd = jobDate <= endDate;
-        }
-        
-        return matchesStart && matchesEnd;
+        return true;
       });
     }
     
@@ -178,32 +176,25 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
                 value={dateFilter}
                 onValueChange={(value) => {
                   setDateFilter(value);
-                  setDateRange({start: '', end: ''}); // Clear custom range
+                  setDateRange(undefined); // Clear custom range
                 }}
-                hasCustomRange={!!(dateRange.start || dateRange.end)}
+                hasCustomRange={!!dateRange}
                 className="w-[120px]"
               />
             </div>
 
             <div className="h-4 w-px bg-border" />
 
-            {/* Custom Date Range Toggle */}
-            <button
-              onClick={() => {
-                setShowDatePicker(!showDatePicker);
-                if (!showDatePicker) {
-                  setDateFilter(''); // Clear presets when opening custom range
-                }
+            {/* Custom Date Range Picker */}
+            <DateRangePicker
+              value={dateRange}
+              onValueChange={(range) => {
+                setDateRange(range);
+                setDateFilter(''); // Clear preset when using custom range
               }}
-              className={`px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1 ${
-                showDatePicker || dateRange.start || dateRange.end
-                  ? 'bg-primary text-primary-foreground border border-primary'
-                  : 'bg-background text-foreground border border-border hover:bg-accent hover:text-accent-foreground'
-              }`}
-            >
-              <Calendar className="h-3 w-3" />
-              Custom Range
-            </button>
+              className="w-[200px]"
+              placeholder="Custom range"
+            />
           </div>
 
           {/* Right side - Clear and Info */}
@@ -214,12 +205,12 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
             </span>
 
             {/* Clear Filters */}
-            {(filter !== 'ALL' || dateFilter || dateRange.start || dateRange.end || showNoAIAnalysisOnly) && (
+            {(filter !== 'ALL' || dateFilter || dateRange || showNoAIAnalysisOnly) && (
               <button
                 onClick={() => {
                   setFilter('ALL');
                   setDateFilter('');
-                  setDateRange({start: '', end: ''});
+                  setDateRange(undefined);
                   setShowDatePicker(false);
                   setShowNoAIAnalysisOnly(false);
                 }}
@@ -232,50 +223,6 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
           </div>
         </div>
 
-        {/* Custom Date Range Picker */}
-        {showDatePicker && (
-          <div className="mt-3 pt-3 border-t bg-background p-3 rounded-lg">
-            <div className="flex items-center gap-3 flex-wrap">
-              <label className="text-sm text-foreground font-medium">From:</label>
-              <input
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => setDateRange(prev => ({...prev, start: e.target.value}))}
-                className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground focus:ring-1 focus:ring-ring focus:border-ring"
-              />
-
-              <label className="text-sm text-foreground font-medium">To:</label>
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange(prev => ({...prev, end: e.target.value}))}
-                className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground focus:ring-1 focus:ring-ring focus:border-ring"
-              />
-
-              {(dateRange.start || dateRange.end) && (
-                <span className="text-xs text-muted-foreground">
-                  {filteredJobs.filter(job => {
-                    const jobDate = new Date(job.applicationDate);
-                    let matchesStart = true;
-                    let matchesEnd = true;
-                    
-                    if (dateRange.start) {
-                      const startDate = new Date(dateRange.start);
-                      matchesStart = jobDate >= startDate;
-                    }
-                    
-                    if (dateRange.end) {
-                      const endDate = new Date(dateRange.end + 'T23:59:59');
-                      matchesEnd = jobDate <= endDate;
-                    }
-                    
-                    return matchesStart && matchesEnd;
-                  }).length} jobs found
-                </span>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Search Input */}
@@ -334,28 +281,28 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
                 Clear search
               </button>
             </div>
-          ) : filter === 'ALL' && !showNoAIAnalysisOnly && !dateFilter && !dateRange.start && !dateRange.end ? (
+          ) : filter === 'ALL' && !showNoAIAnalysisOnly && !dateFilter && !dateRange ? (
             'No jobs found.'
           ) : (
             `No ${filter === 'ALL' ? '' : filter.toLowerCase() + ' '}jobs found${
               showNoAIAnalysisOnly ? ' without AI analysis' : ''
             }${
               dateFilter ? ` for ${dateFilter.replace('last', 'last ').replace('this', 'this ')}` : 
-              dateRange.start || dateRange.end ? ' in selected date range' : ''
+              dateRange ? ' in selected date range' : ''
             }.`
           )}
         </div>
       ) : (
         <div className="space-y-3">
           {/* Results Counter */}
-          {(searchQuery || filter !== 'ALL' || showNoAIAnalysisOnly || dateFilter || dateRange.start || dateRange.end) && (
+          {(searchQuery || filter !== 'ALL' || showNoAIAnalysisOnly || dateFilter || dateRange) && (
             <div className="text-sm text-muted-foreground pb-2">
               Showing {filteredJobs.length} of {jobs.length} jobs
               {searchQuery && ` for "${searchQuery}"`}
               {filter !== 'ALL' && ` in ${filter.toLowerCase()}`}
               {showNoAIAnalysisOnly && ` without AI analysis`}
               {dateFilter && ` from ${dateFilter.replace('last', 'last ').replace('this', 'this ')}`}
-              {(dateRange.start || dateRange.end) && ` in date range`}
+              {dateRange && ` in date range`}
             </div>
           )}
           
