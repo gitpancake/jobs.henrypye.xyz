@@ -12,6 +12,7 @@ export interface Job {
     linkedinContactName?: string | null;
     hasMessagedContact: boolean;
     notes?: string | null;
+    archived: boolean;
 
     // AI Analysis Fields
     salaryMin?: number | null;

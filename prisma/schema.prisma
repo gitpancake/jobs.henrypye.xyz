@@ -8,6 +8,573 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
+model Job {
+  id                  String     @id @default(cuid())
+  title               String
+  company             String
+  description         String?
+  location            String?
+  applicationDate     DateTime   @default(now())
+  status              JobStatus  @default(APPLIED)
+  linkedinContactUrl  String?
+  linkedinContactName String?
+  hasMessagedContact  Boolean    @default(false)
+  notes               String?
+  archived            Boolean    @default(false)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  salaryMin           Int?
+  salaryMax           Int?
+  salaryCurrency      String?
+  responsibilities    String[]   @default([])
+  requirements        String[]   @default([])
+  benefits            String[]   @default([])
+  workArrangement     String?
+  suitabilityScore    Int?
+  suitabilityReason   String?
+  aiAnalyzedAt        DateTime?
+  suggestedNextSteps  String[]   @default([])
+  userId              String     @map("user_id")
+  teamId              String     @map("team_id") @db.Uuid
+  shared_teams        SharedTeam @relation(fields: [teamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([teamId], map: "idx_jobs_team_id")
+  @@index([userId], map: "idx_jobs_user_id")
+  @@map("jobs")
+}
+
+model UserCV {
+  id           String     @id @default(cuid())
+  content      String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  userId       String     @map("user_id")
+  teamId       String     @map("team_id") @db.Uuid
+  shared_teams SharedTeam @relation(fields: [teamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([teamId], map: "idx_user_cv_team_id")
+  @@index([userId], map: "idx_user_cv_user_id")
+  @@map("user_cv")
+}
+
+model SharedUser {
+  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firebaseUid  String             @unique @map("firebase_uid")
+  email        String
+  displayName  String?            @map("display_name")
+  photoUrl     String?            @map("photo_url")
+  createdAt    DateTime?          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  invitesSent  SharedTeamInvite[] @relation("InvitesSent")
+  memberships  SharedTeamMember[]
+  createdTeams SharedTeam[]       @relation("CreatedTeams")
+
+  @@index([firebaseUid], map: "idx_shared_users_firebase_uid")
+  @@map("shared_users")
+}
+
+model SharedTeam {
+  id             String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  createdBy      String             @map("created_by") @db.Uuid
+  createdAt      DateTime?          @default(now()) @map("created_at") @db.Timestamptz(6)
+  safe_mode      Boolean            @default(false)
+  jobs           Job[]
+  invites        SharedTeamInvite[]
+  members        SharedTeamMember[]
+  creator        SharedUser         @relation("CreatedTeams", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  shelby_vehicle shelby_vehicle[]
+  user_cv        UserCV[]
+
+  @@map("shared_teams")
+}
+
+model SharedTeamMember {
+  id       String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teamId   String     @map("team_id") @db.Uuid
+  userId   String     @map("user_id") @db.Uuid
+  role     String
+  joinedAt DateTime?  @default(now()) @map("joined_at") @db.Timestamptz(6)
+  team     SharedTeam @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user     SharedUser @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([teamId, userId], name: "teamId_userId")
+  @@index([teamId], map: "idx_shared_team_members_team_id")
+  @@index([userId], map: "idx_shared_team_members_user_id")
+  @@map("shared_team_members")
+}
+
+model SharedTeamInvite {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teamId     String     @map("team_id") @db.Uuid
+  invitedBy  String     @map("invited_by") @db.Uuid
+  email      String
+  role       String
+  token      String     @unique
+  acceptedAt DateTime?  @map("accepted_at") @db.Timestamptz(6)
+  expiresAt  DateTime   @map("expires_at") @db.Timestamptz(6)
+  createdAt  DateTime?  @default(now()) @map("created_at") @db.Timestamptz(6)
+  inviter    SharedUser @relation("InvitesSent", fields: [invitedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  team       SharedTeam @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([teamId, email], name: "teamId_email")
+  @@index([email], map: "idx_shared_team_invites_email")
+  @@index([token], map: "idx_shared_team_invites_token")
+  @@map("shared_team_invites")
+}
+
+model catan_futures_contract {
+  id              String   @id @default(dbgenerated("gen_random_uuid()"))
+  maker           String
+  taker           String   @default("")
+  requestAmount   Int
+  requestResource String
+  repayAmount     Int
+  repayResource   String
+  turnsToRepay    Int
+  penaltyAmount   Int
+  penaltyResource String
+  turnsElapsed    Int      @default(0)
+  status          String   @default("open")
+  createdAt       DateTime @default(now())
+}
+
+model catan_games {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  league_id     String         @db.Uuid
+  played_at     DateTime       @default(now()) @db.Timestamptz(6)
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  created_by    String?
+  catan_leagues catan_leagues  @relation(fields: [league_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  catan_scores  catan_scores[]
+
+  @@index([league_id], map: "idx_catan_games_league")
+  @@index([played_at(sort: Desc)], map: "idx_catan_games_played_at")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model catan_league_members {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  league_id     String        @db.Uuid
+  firebase_uid  String
+  role          String        @default("participant")
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  catan_leagues catan_leagues @relation(fields: [league_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([league_id, firebase_uid])
+  @@index([league_id], map: "idx_catan_league_members_league")
+  @@index([firebase_uid], map: "idx_catan_league_members_uid")
+}
+
+model catan_leagues {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String                 @unique
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  created_by           String?
+  catan_games          catan_games[]
+  catan_league_members catan_league_members[]
+}
+
+model catan_players {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String         @unique
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  catan_scores catan_scores[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model catan_scores {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  game_id        String        @db.Uuid
+  player_id      String        @db.Uuid
+  victory_points Int           @default(0)
+  settlements    Int           @default(0)
+  cities         Int           @default(0)
+  longest_road   Boolean       @default(false)
+  largest_army   Boolean       @default(false)
+  dev_points     Int           @default(0)
+  created_at     DateTime      @default(now()) @db.Timestamptz(6)
+  dev_card_vp    Int           @default(0)
+  catan_games    catan_games   @relation(fields: [game_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  catan_players  catan_players @relation(fields: [player_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([game_id, player_id])
+  @@index([game_id], map: "idx_catan_scores_game")
+  @@index([player_id], map: "idx_catan_scores_player")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_accounts {
+  id                   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String         @default("")
+  type                 String
+  currency             String
+  balance              Decimal        @default(0) @db.Decimal
+  is_outgoings_account Boolean        @default(false)
+  notes                String         @default("")
+  created_at           DateTime       @default(now()) @db.Timestamptz(6)
+  user_id              String?        @db.Uuid
+  sort_order           Int?           @default(0)
+  finance_users        finance_users? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_annual_subscriptions {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  label         String         @default("")
+  amount        Decimal        @default(0) @db.Decimal
+  currency      String
+  notes         String         @default("")
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  next_renewal  DateTime?      @db.Date
+  user_id       String?        @db.Uuid
+  account_id    String?        @db.Uuid
+  sort_order    Int?           @default(0)
+  finance_users finance_users? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_budget_line_items {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  month         String
+  label         String         @default("")
+  amount        Decimal        @default(0) @db.Decimal
+  currency      String
+  category      String
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  day_of_month  Int?           @db.SmallInt
+  user_id       String?        @db.Uuid
+  recurring     Boolean        @default(true)
+  account_id    String?        @db.Uuid
+  sort_order    Int?           @default(0)
+  finance_users finance_users? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_crypto_holdings {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  asset         String
+  amount        Decimal        @default(0) @db.Decimal
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  user_id       String?        @db.Uuid
+  sort_order    Int?           @default(0)
+  finance_users finance_users? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_debts {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creditor      String         @default("")
+  currency      String
+  amount        Decimal        @default(0) @db.Decimal
+  notes         String         @default("")
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  user_id       String?        @db.Uuid
+  sort_order    Int?           @default(0)
+  paid_off      Boolean        @default(false)
+  finance_users finance_users? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_family_debts {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  family_member String
+  description   String?        @default("")
+  amount        Decimal        @default(0) @db.Decimal
+  currency      String         @default("CAD")
+  notes         String?        @default("")
+  created_at    DateTime?      @default(now()) @db.Timestamptz(6)
+  user_id       String?        @db.Uuid
+  sort_order    Int?           @default(0)
+  finance_users finance_users? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_family_owed {
+  id                                                              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  person                                                          String         @default("")
+  description                                                     String         @default("")
+  amount                                                          Decimal        @default(0) @db.Decimal
+  paid                                                            Decimal        @default(0) @db.Decimal
+  currency                                                        String         @default("USD")
+  paid_off                                                        Boolean        @default(false)
+  notes                                                           String?        @default("")
+  created_at                                                      DateTime?      @default(now()) @db.Timestamptz(6)
+  user_id                                                         String?        @db.Uuid
+  linked_user_id                                                  String?        @db.Uuid
+  sort_order                                                      Int?           @default(0)
+  finance_users_finance_family_owed_linked_user_idTofinance_users finance_users? @relation("finance_family_owed_linked_user_idTofinance_users", fields: [linked_user_id], references: [id], onUpdate: NoAction)
+  finance_users_finance_family_owed_user_idTofinance_users        finance_users? @relation("finance_family_owed_user_idTofinance_users", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_incomings {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source        String         @default("")
+  amount        Decimal        @default(0) @db.Decimal
+  currency      String
+  status        String         @default("pending")
+  notes         String         @default("")
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  user_id       String?        @db.Uuid
+  sort_order    Int?           @default(0)
+  finance_users finance_users? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_pet_expenses {
+  id                                                                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description                                                           String         @default("")
+  amount                                                                Decimal        @default(0) @db.Decimal
+  currency                                                              String         @default("CAD")
+  date                                                                  DateTime?      @db.Date
+  notes                                                                 String?        @default("")
+  created_at                                                            DateTime?      @default(now()) @db.Timestamptz(6)
+  user_id                                                               String?        @db.Uuid
+  shared_with_user_id                                                   String?        @db.Uuid
+  sort_order                                                            Int?           @default(0)
+  finance_users_finance_pet_expenses_shared_with_user_idTofinance_users finance_users? @relation("finance_pet_expenses_shared_with_user_idTofinance_users", fields: [shared_with_user_id], references: [id], onUpdate: NoAction)
+  finance_users_finance_pet_expenses_user_idTofinance_users             finance_users? @relation("finance_pet_expenses_user_idTofinance_users", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_scenarios {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String   @default("")
+  monthly_income  Decimal  @default(0) @db.Decimal
+  income_currency String   @default("CAD")
+  line_items      Json     @default("[]")
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_shared_categories {
+  id                              String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  owner_id                        String                            @db.Uuid
+  name                            String                            @default("")
+  description                     String                            @default("")
+  currency                        String                            @default("CAD")
+  created_at                      DateTime                          @default(now()) @db.Timestamptz(6)
+  updated_at                      DateTime                          @default(now()) @db.Timestamptz(6)
+  finance_users                   finance_users                     @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  finance_shared_category_members finance_shared_category_members[]
+  finance_shared_items            finance_shared_items[]
+
+  @@index([owner_id], map: "idx_finance_shared_categories_owner")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_shared_category_members {
+  id                        String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  category_id               String                    @db.Uuid
+  user_id                   String                    @db.Uuid
+  added_at                  DateTime                  @default(now()) @db.Timestamptz(6)
+  finance_shared_categories finance_shared_categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  finance_users             finance_users             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([category_id, user_id])
+  @@index([category_id], map: "idx_finance_shared_category_members_category")
+  @@index([user_id], map: "idx_finance_shared_category_members_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_shared_items {
+  id                        String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  category_id               String                    @db.Uuid
+  name                      String                    @default("")
+  amount                    Decimal                   @default(0) @db.Decimal
+  currency                  String                    @default("CAD")
+  date                      String?
+  notes                     String                    @default("")
+  added_by                  String                    @db.Uuid
+  sort_order                Int                       @default(0)
+  created_at                DateTime                  @default(now()) @db.Timestamptz(6)
+  finance_users             finance_users             @relation(fields: [added_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  finance_shared_categories finance_shared_categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([category_id], map: "idx_finance_shared_items_category")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_users {
+  id                                                                           String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username                                                                     String                            @unique
+  is_admin                                                                     Boolean                           @default(false)
+  created_at                                                                   DateTime                          @default(now()) @db.Timestamptz(6)
+  firebase_uid                                                                 String                            @unique
+  finance_accounts                                                             finance_accounts[]
+  finance_annual_subscriptions                                                 finance_annual_subscriptions[]
+  finance_budget_line_items                                                    finance_budget_line_items[]
+  finance_crypto_holdings                                                      finance_crypto_holdings[]
+  finance_debts                                                                finance_debts[]
+  finance_family_debts                                                         finance_family_debts[]
+  finance_family_owed_finance_family_owed_linked_user_idTofinance_users        finance_family_owed[]             @relation("finance_family_owed_linked_user_idTofinance_users")
+  finance_family_owed_finance_family_owed_user_idTofinance_users               finance_family_owed[]             @relation("finance_family_owed_user_idTofinance_users")
+  finance_incomings                                                            finance_incomings[]
+  finance_pet_expenses_finance_pet_expenses_shared_with_user_idTofinance_users finance_pet_expenses[]            @relation("finance_pet_expenses_shared_with_user_idTofinance_users")
+  finance_pet_expenses_finance_pet_expenses_user_idTofinance_users             finance_pet_expenses[]            @relation("finance_pet_expenses_user_idTofinance_users")
+  finance_shared_categories                                                    finance_shared_categories[]
+  finance_shared_category_members                                              finance_shared_category_members[]
+  finance_shared_items                                                         finance_shared_items[]
+  finance_wallet_addresses                                                     finance_wallet_addresses[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model finance_wallet_addresses {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String        @db.Uuid
+  address       String
+  label         String?       @default("")
+  chain         String?       @default("ethereum")
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  finance_users finance_users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model shelby_component {
+  id                       String                     @id
+  vehicleId                String
+  name                     String
+  category                 String?
+  createdAt                DateTime                   @default(now())
+  shelby_vehicle           shelby_vehicle             @relation(fields: [vehicleId], references: [id])
+  shelby_service_line_item shelby_service_line_item[]
+
+  @@unique([vehicleId, name])
+}
+
+model shelby_diagnostic_report {
+  id             String         @id
+  vehicleId      String
+  mileage        Int
+  content        Json
+  createdAt      DateTime       @default(now())
+  shelby_vehicle shelby_vehicle @relation(fields: [vehicleId], references: [id])
+}
+
+model shelby_document {
+  id                      String                    @id
+  vehicleId               String
+  originalFilename        String
+  storedFilename          String
+  fileSize                Int
+  mimeType                String
+  status                  DocumentStatus            @default(PENDING)
+  errorMessage            String?
+  uploadedAt              DateTime                  @default(now())
+  processedAt             DateTime?
+  shelby_vehicle          shelby_vehicle            @relation(fields: [vehicleId], references: [id])
+  shelby_odometer_reading shelby_odometer_reading[]
+  shelby_service_record   shelby_service_record[]
+}
+
+model shelby_note {
+  id                    String                @id
+  serviceRecordId       String
+  type                  NoteType
+  title                 String
+  content               String
+  createdAt             DateTime              @default(now())
+  shelby_service_record shelby_service_record @relation(fields: [serviceRecordId], references: [id])
+}
+
+model shelby_odometer_reading {
+  id              String           @id
+  vehicleId       String
+  date            DateTime         @db.Date
+  mileage         Int
+  source          String
+  documentId      String?
+  createdAt       DateTime         @default(now())
+  shelby_document shelby_document? @relation(fields: [documentId], references: [id])
+  shelby_vehicle  shelby_vehicle   @relation(fields: [vehicleId], references: [id])
+}
+
+model shelby_service_line_item {
+  id                    String                @id
+  serviceRecordId       String
+  description           String
+  componentId           String
+  cost                  Float?
+  createdAt             DateTime              @default(now())
+  shelby_component      shelby_component      @relation(fields: [componentId], references: [id])
+  shelby_service_record shelby_service_record @relation(fields: [serviceRecordId], references: [id])
+}
+
+model shelby_service_record {
+  id                       String                     @id
+  vehicleId                String
+  documentId               String?
+  serviceDate              DateTime?                  @db.Date
+  mileage                  Int?
+  shop                     String?
+  notes                    String?
+  createdAt                DateTime                   @default(now())
+  currency                 String                     @default("USD")
+  shelby_note              shelby_note[]
+  shelby_service_line_item shelby_service_line_item[]
+  shelby_document          shelby_document?           @relation(fields: [documentId], references: [id])
+  shelby_vehicle           shelby_vehicle             @relation(fields: [vehicleId], references: [id])
+}
+
+model shelby_vehicle {
+  id                       String                     @id
+  vin                      String                     @unique
+  licensePlate             String
+  mileage                  Int
+  make                     String
+  model                    String
+  year                     Int
+  trim                     String?
+  bodyClass                String?
+  driveType                String?
+  engineCylinders          Int?
+  engineModel              String?
+  displacementL            Float?
+  fuelType                 String?
+  plantCountry             String?
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime
+  user_id                  String
+  team_id                  String                     @db.Uuid
+  shelby_component         shelby_component[]
+  shelby_diagnostic_report shelby_diagnostic_report[]
+  shelby_document          shelby_document[]
+  shelby_odometer_reading  shelby_odometer_reading[]
+  shelby_service_record    shelby_service_record[]
+  shared_teams             SharedTeam                 @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([team_id], map: "idx_shelby_vehicle_team_id")
+  @@index([user_id], map: "idx_shelby_vehicle_user_id")
+}
+
+model trip_projects {
+  id             String   @id
+  title          String
+  start_date     DateTime @db.Date
+  end_date       DateTime @db.Date
+  itinerary_text String
+  route_hints    String?
+  settings       Json
+  days           Json
+  created_at     BigInt
+  updated_at     BigInt
+  user_id        String
+  team_id        String
+
+  @@index([team_id], map: "idx_trip_projects_team_id")
+  @@index([updated_at(sort: Desc)], map: "idx_trip_projects_updated_at")
+  @@index([user_id], map: "idx_trip_projects_user_id")
+}
+
 enum JobStatus {
   APPLIED
   INTERVIEWING
@@ -15,110 +582,17 @@ enum JobStatus {
   REJECTED
 }
 
-model Job {
-  id                    String     @id @default(cuid())
-  userId                String     @map("user_id")
-  teamId                String     @map("team_id") @db.Uuid
-  title                 String
-  company               String
-  description           String?
-  location              String?
-  applicationDate       DateTime   @default(now())
-  status                JobStatus  @default(APPLIED)
-  linkedinContactUrl    String?
-  linkedinContactName   String?
-  hasMessagedContact    Boolean    @default(false)
-  notes                 String?
-
-  // AI Analysis Fields
-  salaryMin             Int?
-  salaryMax             Int?
-  salaryCurrency        String?
-  responsibilities      String[]   @default([])
-  requirements          String[]   @default([])
-  benefits              String[]   @default([])
-  workArrangement       String?    // remote/hybrid/onsite
-  suitabilityScore      Int?       // 0-100
-  suitabilityReason     String?
-  suggestedNextSteps    String[]   @default([])
-  aiAnalyzedAt          DateTime?
-
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
-
-  @@map("jobs")
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
-model UserCV {
-  id          String   @id @default(cuid())
-  userId      String   @map("user_id")
-  teamId      String   @map("team_id") @db.Uuid
-  content     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("user_cv")
-}
-
-// ─── Shared tables (source of truth in shelby) ─────────────
-
-model SharedUser {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firebaseUid String   @unique @map("firebase_uid")
-  email       String
-  displayName String?  @map("display_name")
-  photoUrl    String?  @map("photo_url")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  memberships SharedTeamMember[]
-  createdTeams SharedTeam[] @relation("CreatedTeams")
-  invitesSent SharedTeamInvite[] @relation("InvitesSent")
-
-  @@map("shared_users")
-}
-
-model SharedTeam {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String
-  createdBy String   @map("created_by") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-
-  creator  SharedUser         @relation("CreatedTeams", fields: [createdBy], references: [id])
-  members  SharedTeamMember[]
-  invites  SharedTeamInvite[]
-
-  @@map("shared_teams")
-}
-
-model SharedTeamMember {
-  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  teamId   String   @map("team_id") @db.Uuid
-  userId   String   @map("user_id") @db.Uuid
-  role     String
-  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz
-
-  team SharedTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user SharedUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([teamId, userId], name: "teamId_userId")
-  @@map("shared_team_members")
-}
-
-model SharedTeamInvite {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  teamId     String    @map("team_id") @db.Uuid
-  invitedBy  String    @map("invited_by") @db.Uuid
-  email      String
-  role       String
-  token      String    @unique
-  acceptedAt DateTime? @map("accepted_at") @db.Timestamptz
-  expiresAt  DateTime  @map("expires_at") @db.Timestamptz
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
-
-  team    SharedTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  inviter SharedUser @relation("InvitesSent", fields: [invitedBy], references: [id])
-
-  @@unique([teamId, email], name: "teamId_email")
-  @@map("shared_team_invites")
+enum NoteType {
+  INSPECTION
+  MEASUREMENT
+  RECOMMENDATION
+  CONCERN
+  OBSERVATION
 }

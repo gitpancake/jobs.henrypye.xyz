@@ -6,7 +6,7 @@ import { Job, JobStatus } from "@/lib/types";
 import { JobList } from "@/components/job-list";
 import { Button } from "@/components/animate-ui/components/buttons/button";
 import { Fade } from "@/components/animate-ui/primitives/effects/fade";
-import { Plus, Trash2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Sparkles, Archive } from "lucide-react";
 import { ErrorMessage } from "@/components/error-message";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { obfuscateJobs } from "@/lib/obfuscation";
@@ -236,6 +236,34 @@ export default function DashboardPage() {
     setRecentlyAnalyzedJobId(null);
   }, []);
 
+  const handleArchiveRejected = useCallback(async () => {
+    const rejectedCount = jobs.filter(job => job.status === 'REJECTED').length;
+    if (!confirm(
+      `Archive ${rejectedCount} rejected job${rejectedCount === 1 ? '' : 's'} from previous search? This will hide them from the main view.`
+    )) return;
+    
+    setLoadingOperation("archive-rejected");
+    setError(null);
+    try {
+      const response = await fetch("/api/jobs/archive-rejected", {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to archive rejected jobs");
+      
+      alert(data.message);
+      await refreshData();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to archive rejected jobs. Please try again.",
+      );
+    } finally {
+      setLoadingOperation(null);
+    }
+  }, [jobs, refreshData]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -247,6 +275,19 @@ export default function DashboardPage() {
   return (
     <>
       <Fade className="flex flex-wrap justify-end gap-2 mb-6">
+        {jobs.filter(job => job.status === 'REJECTED').length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleArchiveRejected}
+            disabled={loadingOperation === "archive-rejected"}
+          >
+            <Archive />
+            {loadingOperation === "archive-rejected" 
+              ? "Archiving..." 
+              : `Archive Previous Search (${jobs.filter(job => job.status === 'REJECTED').length})`}
+          </Button>
+        )}
         {jobs.length > 0 && (
           <Button
             variant="destructive"

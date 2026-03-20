@@ -1,9 +1,13 @@
 import { prisma } from './prisma';
 import { Job, CreateJobInput, UpdateJobInput, JobStatus, BulkImportJob } from './types';
 
-export async function getAllJobs(teamId: string, status?: JobStatus): Promise<Job[]> {
+export async function getAllJobs(teamId: string, status?: JobStatus, includeArchived: boolean = false): Promise<Job[]> {
   const jobs = await prisma.job.findMany({
-    where: { teamId, ...(status ? { status } : {}) },
+    where: { 
+      teamId, 
+      ...(status ? { status } : {}),
+      ...(includeArchived ? {} : { archived: false })
+    },
     orderBy: { applicationDate: 'desc' },
   });
 
@@ -67,13 +71,29 @@ export async function bulkCreateJobs(jobs: BulkImportJob[], teamId: string): Pro
   return created;
 }
 
+export async function archiveRejectedJobs(teamId: string): Promise<number> {
+  const result = await prisma.job.updateMany({
+    where: {
+      teamId,
+      status: 'REJECTED',
+      archived: false,
+    },
+    data: {
+      archived: true,
+    },
+  });
+
+  return result.count;
+}
+
 export async function getJobStats(teamId: string) {
-  const [total, applied, interviewing, accepted, rejected] = await Promise.all([
-    prisma.job.count({ where: { teamId } }),
-    prisma.job.count({ where: { teamId, status: 'APPLIED' } }),
-    prisma.job.count({ where: { teamId, status: 'INTERVIEWING' } }),
-    prisma.job.count({ where: { teamId, status: 'ACCEPTED' } }),
-    prisma.job.count({ where: { teamId, status: 'REJECTED' } }),
+  const [total, applied, interviewing, accepted, rejected, archived] = await Promise.all([
+    prisma.job.count({ where: { teamId, archived: false } }),
+    prisma.job.count({ where: { teamId, status: 'APPLIED', archived: false } }),
+    prisma.job.count({ where: { teamId, status: 'INTERVIEWING', archived: false } }),
+    prisma.job.count({ where: { teamId, status: 'ACCEPTED', archived: false } }),
+    prisma.job.count({ where: { teamId, status: 'REJECTED', archived: false } }),
+    prisma.job.count({ where: { teamId, archived: true } }),
   ]);
 
   return {
@@ -82,5 +102,6 @@ export async function getJobStats(teamId: string) {
     interviewing,
     accepted,
     rejected,
+    archived,
   };
 }
