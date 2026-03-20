@@ -31,6 +31,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeTogglerButton } from "@/components/animate-ui/components/buttons/theme-toggler";
 import ProfileDialog from "@/components/profile-dialog";
+import PendingInviteBanner from "@/components/pending-invite-banner";
 import { DashboardContext } from "@/lib/dashboard-context";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -208,7 +209,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               </Button>
             </div>
           </header>
-          <div className="p-4 lg:p-8">{children}</div>
+          <div className="p-4 lg:p-8">
+            <PendingInviteBanner />
+            {children}
+          </div>
         </SidebarInset>
         <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
       </SidebarProvider>

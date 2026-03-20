@@ -25,7 +25,9 @@ import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import {
   Camera,
   Check,
+  Copy,
   Loader2,
+  Link,
   X,
   Plus,
   Crown,
@@ -326,6 +328,7 @@ function TeamTab() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"collaborator" | "viewer">("collaborator");
   const [sendingInvite, setSendingInvite] = useState(false);
+  const [lastInviteLink, setLastInviteLink] = useState<string | null>(null);
 
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
@@ -412,10 +415,12 @@ function TeamTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
       });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || "Failed");
       }
+      const link = `${window.location.origin}/invite?token=${data.token}`;
+      setLastInviteLink(link);
       setInviteEmail("");
       setShowInvite(false);
       await fetchTeamData();
@@ -597,6 +602,32 @@ function TeamTab() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Last Invite Link */}
+      {lastInviteLink && (
+        <div className="rounded-md border bg-muted/50 p-3 space-y-1.5">
+          <p className="text-xs font-medium flex items-center gap-1.5">
+            <Link className="size-3" />
+            Share this invite link
+          </p>
+          <div className="flex gap-2">
+            <code className="flex-1 text-xs bg-background rounded px-2 py-1.5 truncate border">
+              {lastInviteLink}
+            </code>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(lastInviteLink);
+                toast.success("Link copied to clipboard");
+              }}
+            >
+              <Copy className="size-3.5" />
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">Expires in 7 days</p>
         </div>
       )}
 
