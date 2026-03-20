@@ -154,84 +154,89 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
 
   return (
     <div className="space-y-4">
-      {/* Search Input */}
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <Input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by company, job title, or date..."
-          className="pl-10"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center"
-          >
-            <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-          </button>
-        )}
-      </div>
+      {/* Toolbar - Filters */}
+      <div className="bg-muted/50 border rounded-lg p-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          {/* Left side - Filter Controls */}
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* Status Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground font-medium">Status:</span>
+              <StatusFilterCombobox
+                value={filter}
+                onValueChange={(status) => setFilter(status)}
+                className="w-[140px]"
+              />
+            </div>
 
-      {/* Date Filters */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm text-foreground font-medium">Date:</span>
-          
-          <DateFilterCombobox
-            value={dateFilter}
-            onValueChange={(value) => {
-              setDateFilter(value);
-              setDateRange({start: '', end: ''}); // Clear custom range
-            }}
-            hasCustomRange={!!(dateRange.start || dateRange.end)}
-            className="w-[140px]"
-          />
+            <div className="h-4 w-px bg-border" />
 
-          <div className="h-4 w-px bg-border" />
+            {/* Date Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground font-medium">Date:</span>
+              <DateFilterCombobox
+                value={dateFilter}
+                onValueChange={(value) => {
+                  setDateFilter(value);
+                  setDateRange({start: '', end: ''}); // Clear custom range
+                }}
+                hasCustomRange={!!(dateRange.start || dateRange.end)}
+                className="w-[120px]"
+              />
+            </div>
 
-          {/* Custom Date Range Toggle */}
-          <button
-            onClick={() => {
-              setShowDatePicker(!showDatePicker);
-              if (!showDatePicker) {
-                setDateFilter(''); // Clear presets when opening custom range
-              }
-            }}
-            className={`px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1 ${
-              showDatePicker || dateRange.start || dateRange.end
-                ? 'bg-primary text-primary-foreground border border-primary'
-                : 'bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80'
-            }`}
-          >
-            <Calendar className="h-3 w-3" />
-            Custom Range
-          </button>
+            <div className="h-4 w-px bg-border" />
 
-          {/* Clear All Date Filters */}
-          {(dateFilter || dateRange.start || dateRange.end) && (
+            {/* Custom Date Range Toggle */}
             <button
               onClick={() => {
-                setDateFilter('');
-                setDateRange({start: '', end: ''});
-                setShowDatePicker(false);
+                setShowDatePicker(!showDatePicker);
+                if (!showDatePicker) {
+                  setDateFilter(''); // Clear presets when opening custom range
+                }
               }}
-              className="px-2 py-1 text-xs rounded-md bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors flex items-center gap-1"
+              className={`px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1 ${
+                showDatePicker || dateRange.start || dateRange.end
+                  ? 'bg-primary text-primary-foreground border border-primary'
+                  : 'bg-background text-foreground border border-border hover:bg-accent hover:text-accent-foreground'
+              }`}
             >
-              <X className="h-3 w-3" />
-              Clear
+              <Calendar className="h-3 w-3" />
+              Custom Range
             </button>
-          )}
+          </div>
+
+          {/* Right side - Clear and Info */}
+          <div className="flex items-center gap-3">
+            {/* Job Count */}
+            <span className="text-sm text-muted-foreground">
+              {filter === 'ALL' ? jobs.length : jobs.filter(job => job.status === filter).length} jobs
+            </span>
+
+            {/* Clear Filters */}
+            {(filter !== 'ALL' || dateFilter || dateRange.start || dateRange.end || showNoAIAnalysisOnly) && (
+              <button
+                onClick={() => {
+                  setFilter('ALL');
+                  setDateFilter('');
+                  setDateRange({start: '', end: ''});
+                  setShowDatePicker(false);
+                  setShowNoAIAnalysisOnly(false);
+                }}
+                className="px-2 py-1 text-xs rounded-md bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors flex items-center gap-1"
+              >
+                <X className="h-3 w-3" />
+                Clear All
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Custom Date Range Picker */}
         {showDatePicker && (
-          <div className="bg-muted p-3 rounded-lg border">
+          <div className="mt-3 pt-3 border-t bg-background p-3 rounded-lg">
             <div className="flex items-center gap-3 flex-wrap">
-              <label className="text-sm text-foreground">From:</label>
+              <label className="text-sm text-foreground font-medium">From:</label>
               <input
                 type="date"
                 value={dateRange.start}
@@ -239,7 +244,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
                 className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground focus:ring-1 focus:ring-ring focus:border-ring"
               />
 
-              <label className="text-sm text-foreground">To:</label>
+              <label className="text-sm text-foreground font-medium">To:</label>
               <input
                 type="date"
                 value={dateRange.end}
@@ -273,17 +278,26 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
         )}
       </div>
 
-      {/* Status Filter */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-sm text-foreground font-medium">Status:</span>
-        <StatusFilterCombobox
-          value={filter}
-          onValueChange={(status) => setFilter(status)}
-          className="w-[160px]"
+      {/* Search Input */}
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <Input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by company, job title, or date..."
+          className="pl-10"
         />
-        <span className="text-sm text-muted-foreground">
-          ({filter === 'ALL' ? jobs.length : jobs.filter(job => job.status === filter).length} jobs)
-        </span>
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+          >
+            <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+          </button>
+        )}
       </div>
 
       {/* Secondary Filter - No AI Analysis */}
