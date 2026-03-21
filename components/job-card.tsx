@@ -1,24 +1,15 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Job, JobStatus } from '@/lib/types';
-import { Pencil, Trash2, Copy, ExternalLink, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
+import { ExternalLink, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/animate-ui/components/buttons/button';
-import { StatusCombobox } from '@/components/status-combobox';
 
 interface JobCardProps {
   job: Job;
-  onEdit: (job: Job) => void;
-  onDelete: (jobId: string) => void;
-  onDuplicate: (job: Job) => void;
-  onStatusChange: (jobId: string, status: JobStatus) => void;
-  onAnalyze?: (jobId: string) => void;
-  isAnalyzing?: boolean;
-  readOnly?: boolean;
 }
 
 const statusColors: Record<JobStatus, string> = {
@@ -28,255 +19,75 @@ const statusColors: Record<JobStatus, string> = {
   REJECTED: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30',
 };
 
-
-export const JobCard = memo(function JobCard({
-  job,
-  onEdit,
-  onDelete,
-  onDuplicate,
-  onStatusChange,
-  onAnalyze,
-  isAnalyzing = false,
-  readOnly = false
-}: JobCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export const JobCard = memo(function JobCard({ job }: JobCardProps) {
   const router = useRouter();
-  const hasAIAnalysis = job.aiAnalyzedAt && (job.suitabilityReason || job.requirements?.length > 0 || job.responsibilities?.length > 0 || job.benefits?.length > 0 || job.suggestedNextSteps?.length > 0);
-
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Don't navigate if clicking on interactive elements
-    const target = e.target as HTMLElement;
-    if (target.closest('button, a, select, input, [role="combobox"], [data-slot="popover"]')) return;
-    router.push(`/jobs/${job.id}`);
-  };
 
   return (
     <Card
-      className="hover:shadow-md hover:border-primary/30 transition-all cursor-pointer"
-      onClick={handleCardClick}
+      className="hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group"
+      onClick={() => router.push(`/jobs/${job.id}`)}
     >
       <CardContent className="p-4">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <h3 className="text-base sm:text-lg font-semibold text-foreground">{job.title}</h3>
-            <Badge variant="outline" className={statusColors[job.status]}>
-              {job.status.replace('_', ' ')}
-            </Badge>
-            {job.suitabilityScore !== null && job.suitabilityScore !== undefined && (
-              <button
-                onClick={() => hasAIAnalysis && setIsExpanded(!isExpanded)}
-                className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
-                  job.suitabilityScore >= 80 ? 'bg-green-500/15 text-green-600 dark:text-green-300' :
-                  job.suitabilityScore >= 60 ? 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-300' :
-                  'bg-red-500/15 text-red-600 dark:text-red-400'
-                } ${hasAIAnalysis ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
-                disabled={!hasAIAnalysis}
-                aria-label={hasAIAnalysis ? `${isExpanded ? 'Hide' : 'Show'} AI analysis details` : 'AI analysis unavailable'}
-              >
-                {job.suitabilityScore}% Match
-                {hasAIAnalysis && (
-                  isExpanded ?
-                    <ChevronDown className="h-3 w-3" aria-hidden="true" /> :
-                    <ChevronRight className="h-3 w-3" aria-hidden="true" />
-                )}
-              </button>
-            )}
-          </div>
-
-          <p className="text-foreground font-medium mb-1">{job.company}</p>
-
-          {job.location && (
-            <p className="text-muted-foreground/80 dark:text-muted-foreground text-sm mb-2">{job.location}</p>
-          )}
-
-          {(job.salaryMin || job.salaryMax) && (
-            <p className="text-green-600 dark:text-green-300 text-sm font-medium mb-2">
-              {job.salaryMin && job.salaryMax ?
-                `${job.salaryCurrency || '$'}${job.salaryMin.toLocaleString()} - ${job.salaryCurrency || '$'}${job.salaryMax.toLocaleString()}` :
-                job.salaryMin ?
-                  `${job.salaryCurrency || '$'}${job.salaryMin.toLocaleString()}+` :
-                  `Up to ${job.salaryCurrency || '$'}${job.salaryMax?.toLocaleString()}`
-              } {job.workArrangement && `• ${job.workArrangement}`}
-            </p>
-          )}
-
-          {job.description && (
-            <p className="text-muted-foreground/80 dark:text-muted-foreground text-sm mb-2 hidden sm:block">
-              {job.description.length > 150
-                ? `${job.description.substring(0, 150)}...`
-                : job.description}
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mb-2">
-            <span>Applied: {format(new Date(job.applicationDate), 'MMM d, yyyy')}</span>
-            {job.linkedinContactName && (
-              <span className="flex items-center gap-1">
-                Contact: {job.linkedinContactName}
-                {job.hasMessagedContact && (
-                  <span className="text-green-600 dark:text-green-300" aria-label="Contact messaged">✓</span>
-                )}
-              </span>
-            )}
-          </div>
-
-          {job.linkedinContactUrl && (
-            <a
-              href={job.linkedinContactUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-primary hover:text-primary/80 text-sm"
-              aria-label={`View LinkedIn profile of ${job.linkedinContactName || 'contact'}`}
-            >
-              LinkedIn Profile <ExternalLink className="h-3 w-3" aria-hidden="true" />
-            </a>
-          )}
-
-          {job.notes && (
-            <p className="text-muted-foreground text-sm mt-2 italic">{job.notes}</p>
-          )}
-
-          {isExpanded && hasAIAnalysis && (
-            <div className="mt-4 pt-4 border-t">
-              <h4 className="text-sm font-medium text-foreground mb-3">AI Analysis Details</h4>
-
-              {job.suitabilityReason && (
-                <div className="mb-4">
-                  <h5 className="text-sm font-medium text-foreground/80 mb-1">Match Reasoning</h5>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{job.suitabilityReason}</p>
-                </div>
-              )}
-
-              {job.requirements && job.requirements.length > 0 && (
-                <div className="mb-4">
-                  <h5 className="text-sm font-medium text-foreground/80 mb-2">Key Requirements</h5>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {job.requirements.slice(0, 5).map((req, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="w-1 h-1 bg-muted-foreground rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                        {req}
-                      </li>
-                    ))}
-                    {job.requirements.length > 5 && (
-                      <li className="text-xs text-muted-foreground italic">+{job.requirements.length - 5} more...</li>
-                    )}
-                  </ul>
-                </div>
-              )}
-
-              {job.responsibilities && job.responsibilities.length > 0 && (
-                <div className="mb-4">
-                  <h5 className="text-sm font-medium text-foreground/80 mb-2">Key Responsibilities</h5>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {job.responsibilities.slice(0, 3).map((resp, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="w-1 h-1 bg-muted-foreground rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                        {resp}
-                      </li>
-                    ))}
-                    {job.responsibilities.length > 3 && (
-                      <li className="text-xs text-muted-foreground italic">+{job.responsibilities.length - 3} more...</li>
-                    )}
-                  </ul>
-                </div>
-              )}
-
-              {job.benefits && job.benefits.length > 0 && (
-                <div className="mb-4">
-                  <h5 className="text-sm font-medium text-foreground/80 mb-2">Benefits & Perks</h5>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {job.benefits.slice(0, 3).map((benefit, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="w-1 h-1 bg-muted-foreground rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                        {benefit}
-                      </li>
-                    ))}
-                    {job.benefits.length > 3 && (
-                      <li className="text-xs text-muted-foreground italic">+{job.benefits.length - 3} more...</li>
-                    )}
-                  </ul>
-                </div>
-              )}
-
-              {job.suggestedNextSteps && job.suggestedNextSteps.length > 0 && (
-                <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <h5 className="text-sm font-medium text-foreground mb-2">Suggested Next Steps</h5>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {job.suggestedNextSteps.map((step, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="text-muted-foreground mr-2">•</span>
-                        <span>{step}</span>
-                      </li>
-                    ))}
-                    {job.linkedinContactName && !job.hasMessagedContact && (
-                      <li className="flex items-start">
-                        <span className="text-muted-foreground mr-2">•</span>
-                        <span>Message {job.linkedinContactName} on LinkedIn to express interest</span>
-                      </li>
-                    )}
-                  </ul>
-                </div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground">{job.title}</h3>
+              <Badge variant="outline" className={statusColors[job.status]}>
+                {job.status.replace('_', ' ')}
+              </Badge>
+              {job.suitabilityScore !== null && job.suitabilityScore !== undefined && (
+                <span
+                  className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                    job.suitabilityScore >= 80 ? 'bg-green-500/15 text-green-600 dark:text-green-300' :
+                    job.suitabilityScore >= 60 ? 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-300' :
+                    'bg-red-500/15 text-red-600 dark:text-red-400'
+                  }`}
+                >
+                  {job.suitabilityScore}% Match
+                </span>
               )}
             </div>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-1 sm:ml-4 shrink-0">
-          <StatusCombobox
-            value={job.status}
-            onValueChange={(status) => onStatusChange(job.id, status)}
-            disabled={readOnly}
-          />
 
-          {!readOnly && (
-            <>
-              {onAnalyze && job.description && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => onAnalyze(job.id)}
-                  disabled={isAnalyzing}
-                  aria-label={`${isAnalyzing ? 'Analyzing' : 'Analyze'} job with AI for ${job.title} at ${job.company}`}
-                  title={isAnalyzing ? 'Analyzing with AI...' : 'Analyze with AI'}
-                >
-                  <Sparkles
-                    className={`h-4 w-4 ${isAnalyzing ? 'animate-spin text-primary' : ''}`}
-                    aria-hidden="true"
-                  />
-                </Button>
+            <p className="text-foreground font-medium mb-1">{job.company}</p>
+
+            {job.location && (
+              <p className="text-muted-foreground/80 dark:text-muted-foreground text-sm mb-1">{job.location}</p>
+            )}
+
+            {(job.salaryMin || job.salaryMax) && (
+              <p className="text-green-600 dark:text-green-300 text-sm font-medium mb-1">
+                {job.salaryMin && job.salaryMax ?
+                  `${job.salaryCurrency || '$'}${job.salaryMin.toLocaleString()} - ${job.salaryCurrency || '$'}${job.salaryMax.toLocaleString()}` :
+                  job.salaryMin ?
+                    `${job.salaryCurrency || '$'}${job.salaryMin.toLocaleString()}+` :
+                    `Up to ${job.salaryCurrency || '$'}${job.salaryMax?.toLocaleString()}`
+                } {job.workArrangement && `• ${job.workArrangement}`}
+              </p>
+            )}
+
+            {job.description && (
+              <p className="text-muted-foreground/80 dark:text-muted-foreground text-sm mb-1 hidden sm:block">
+                {job.description.length > 150
+                  ? `${job.description.substring(0, 150)}...`
+                  : job.description}
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <span>Applied: {format(new Date(job.applicationDate), 'MMM d, yyyy')}</span>
+              {job.linkedinContactName && (
+                <span className="flex items-center gap-1">
+                  Contact: {job.linkedinContactName}
+                  {job.hasMessagedContact && (
+                    <span className="text-green-600 dark:text-green-300" aria-label="Contact messaged">✓</span>
+                  )}
+                </span>
               )}
+            </div>
+          </div>
 
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => onEdit(job)}
-                aria-label={`Edit job application for ${job.title} at ${job.company}`}
-              >
-                <Pencil className="h-4 w-4" aria-hidden="true" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => onDuplicate(job)}
-                aria-label={`Duplicate job application for ${job.title} at ${job.company}`}
-              >
-                <Copy className="h-4 w-4" aria-hidden="true" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => onDelete(job.id)}
-                aria-label={`Delete job application for ${job.title} at ${job.company}`}
-              >
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-              </Button>
-            </>
-          )}
+          <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-primary shrink-0 mt-1 transition-colors" />
         </div>
-      </div>
       </CardContent>
     </Card>
   );

@@ -190,7 +190,7 @@ export default function JobDetailPage() {
 
   if (error && !job) {
     return (
-      <div className="max-w-3xl mx-auto">
+      <div className="space-y-8">
         <Link href="/">
           <Button variant="ghost" size="sm" className="mb-4">
             <ArrowLeft className="h-4 w-4" /> Back
@@ -214,14 +214,16 @@ export default function JobDetailPage() {
       job.suggestedNextSteps?.length > 0);
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <Link href="/">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Button>
-        </Link>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <Link href="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2 transition-colors">
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to Dashboard
+          </Link>
+          <h1 className="text-3xl font-bold text-foreground">{job.title}</h1>
+          <p className="text-muted-foreground mt-1">{job.company}</p>
+        </div>
         {!isViewer && (
           <div className="flex items-center gap-2">
             {job.description && (

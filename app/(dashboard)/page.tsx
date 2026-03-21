@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { Job, JobStatus } from "@/lib/types";
+import { Job } from "@/lib/types";
 import { JobList } from "@/components/job-list";
 import { ErrorMessage } from "@/components/error-message";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -17,11 +16,9 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingOperation, setLoadingOperation] = useState<string | null>(null);
-  const [analyzingJobId, setAnalyzingJobId] = useState<string | null>(null);
   const [recentlyAnalyzedJobId, setRecentlyAnalyzedJobId] = useState<
     string | null
   >(null);
-  const router = useRouter();
   const { refreshStats, isObfuscated } = useDashboard();
   const { user } = useAuth();
   const isViewer = user.teamRole === "viewer";
@@ -52,142 +49,6 @@ export default function DashboardPage() {
     };
     init();
   }, [fetchJobs]);
-
-  const handleStatusChange = useCallback(
-    async (jobId: string, status: JobStatus) => {
-      setLoadingOperation(`status-${jobId}`);
-      setError(null);
-      try {
-        const response = await fetch(`/api/jobs/${jobId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status }),
-        });
-        if (!response.ok) throw new Error("Failed to update job status");
-        await refreshData();
-      } catch {
-        setError("Failed to update job status. Please try again.");
-      } finally {
-        setLoadingOperation(null);
-      }
-    },
-    [refreshData],
-  );
-
-  const handleDeleteJob = useCallback(
-    async (jobId: string) => {
-      const ok = await confirm({
-        title: "Delete job",
-        description: "Are you sure you want to delete this job?",
-        confirmLabel: "Delete",
-        variant: "destructive",
-      });
-      if (!ok) return;
-      setLoadingOperation(`delete-${jobId}`);
-      setError(null);
-      try {
-        const response = await fetch(`/api/jobs/${jobId}`, {
-          method: "DELETE",
-        });
-        if (!response.ok) throw new Error("Failed to delete job");
-        await refreshData();
-      } catch {
-        setError("Failed to delete job. Please try again.");
-      } finally {
-        setLoadingOperation(null);
-      }
-    },
-    [refreshData],
-  );
-
-  const handleEditJob = useCallback(
-    (job: Job) => {
-      const realJob = jobs.find((j) => j.id === job.id) || job;
-      router.push(`/jobs/${realJob.id}/edit`);
-    },
-    [jobs, router],
-  );
-
-  const handleDuplicateJob = useCallback(
-    async (job: Job) => {
-      setError(null);
-      setLoadingOperation(`duplicate-${job.id}`);
-      try {
-        const realJob = jobs.find((j) => j.id === job.id) || job;
-        const duplicateData = {
-          title: realJob.title,
-          company: realJob.company,
-          description: realJob.description,
-          location: realJob.location,
-          applicationDate: new Date(),
-          linkedinContactUrl: realJob.linkedinContactUrl,
-          linkedinContactName: realJob.linkedinContactName,
-          hasMessagedContact: false,
-          notes: realJob.notes
-            ? `Duplicate of original application\n${realJob.notes}`
-            : "Duplicate of original application",
-        };
-        const response = await fetch("/api/jobs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(duplicateData),
-        });
-        if (!response.ok) throw new Error("Failed to duplicate job");
-        await refreshData();
-      } catch {
-        setError("Failed to duplicate job. Please try again.");
-      } finally {
-        setLoadingOperation(null);
-      }
-    },
-    [jobs, refreshData],
-  );
-
-  const handleAnalyzeJob = useCallback(
-    async (jobId: string) => {
-      setAnalyzingJobId(jobId);
-      setError(null);
-      try {
-        const response = await fetch(`/api/jobs/${jobId}/analyze`, {
-          method: "POST",
-          signal: AbortSignal.timeout(120000),
-        });
-        if (!response.ok) {
-          let errorMessage = "Failed to analyze job";
-          try {
-            const errorData = await response.json();
-            errorMessage = errorData.error || errorMessage;
-          } catch {
-            if (response.status === 503)
-              errorMessage =
-                "AI service is temporarily busy. Please try again in a moment.";
-            else if (response.status === 400)
-              errorMessage = "This job has no description to analyze.";
-          }
-          throw new Error(errorMessage);
-        }
-        setRecentlyAnalyzedJobId(jobId);
-        await refreshData();
-      } catch (err) {
-        let errorMessage = "Failed to analyze job. Please try again.";
-        if (err instanceof Error) {
-          if (
-            err.name === "TimeoutError" ||
-            err.message.includes("timeout")
-          ) {
-            errorMessage =
-              "AI analysis timed out. This job description might be too long. Please try again.";
-          } else if (err.message.length > 0) {
-            errorMessage = err.message;
-          }
-        }
-        setError(errorMessage);
-      } finally {
-        setAnalyzingJobId(null);
-      }
-    },
-    [refreshData],
-  );
 
   const handleClearAllJobs = useCallback(async () => {
     const ok = await confirm({
@@ -254,7 +115,7 @@ export default function DashboardPage() {
       confirmLabel: "Archive",
     });
     if (!ok) return;
-    
+
     setLoadingOperation("archive-rejected");
     setError(null);
     try {
@@ -263,7 +124,7 @@ export default function DashboardPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to archive rejected jobs");
-      
+
       toast.success(data.message);
       await refreshData();
     } catch (err) {
@@ -293,12 +154,6 @@ export default function DashboardPage() {
 
       <JobList
         jobs={displayJobs}
-        onEdit={handleEditJob}
-        onDelete={handleDeleteJob}
-        onDuplicate={handleDuplicateJob}
-        onStatusChange={handleStatusChange}
-        onAnalyze={handleAnalyzeJob}
-        analyzingJobId={analyzingJobId}
         recentlyAnalyzedJobId={recentlyAnalyzedJobId}
         onClearRecentlyAnalyzed={handleClearRecentlyAnalyzed}
         readOnly={isViewer}

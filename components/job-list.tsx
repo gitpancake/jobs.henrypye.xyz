@@ -21,12 +21,6 @@ import Link from 'next/link';
 
 interface JobListProps {
   jobs: Job[];
-  onEdit: (job: Job) => void;
-  onDelete: (jobId: string) => void;
-  onDuplicate: (job: Job) => void;
-  onStatusChange: (jobId: string, status: JobStatus) => void;
-  onAnalyze?: (jobId: string) => void;
-  analyzingJobId?: string | null;
   recentlyAnalyzedJobId?: string | null;
   onClearRecentlyAnalyzed?: () => void;
   readOnly?: boolean;
@@ -41,7 +35,7 @@ interface JobListProps {
 
 const statusOptions: JobStatus[] = ['APPLIED', 'INTERVIEWING', 'ACCEPTED', 'REJECTED'];
 
-export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, onAnalyze, analyzingJobId, recentlyAnalyzedJobId, onClearRecentlyAnalyzed, readOnly = false, onBatchAnalyze, onArchiveRejected, onClearAll, loadingOperation, unanalyzedCount = 0, rejectedCount = 0 }: JobListProps) {
+export function JobList({ jobs, recentlyAnalyzedJobId, onClearRecentlyAnalyzed, readOnly = false, onBatchAnalyze, onArchiveRejected, onClearAll, loadingOperation, unanalyzedCount = 0, rejectedCount = 0 }: JobListProps) {
   const [filter, setFilter] = useState<JobStatus | 'ALL'>('APPLIED');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNoAIAnalysisOnly, setShowNoAIAnalysisOnly] = useState(false);
@@ -386,17 +380,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
           )}
           
           {filteredJobs.map(job => (
-            <JobCard
-              key={job.id}
-              job={job}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onDuplicate={onDuplicate}
-              onStatusChange={onStatusChange}
-              onAnalyze={onAnalyze}
-              isAnalyzing={analyzingJobId === job.id}
-              readOnly={readOnly}
-            />
+            <JobCard key={job.id} job={job} />
           ))}
         </div>
       )}
