@@ -2,8 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Sparkles, FileText, BarChart3, Plus } from "lucide-react";
-import Link from "next/link";
+import { Sparkles, FileText, BarChart3, Plus } from "lucide-react";
 import { Button } from "@/components/animate-ui/components/buttons/button";
 import { Fade } from "@/components/animate-ui/primitives/effects/fade";
 import { Slide } from "@/components/animate-ui/primitives/effects/slide";
@@ -11,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDashboard } from "@/lib/dashboard-context";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface JobAnalysisResult {
   suitabilityScore: number;
@@ -39,6 +39,8 @@ export default function AnalyzerPage() {
   const [isCreatingJob, setIsCreatingJob] = useState(false);
   const router = useRouter();
   const { refreshStats } = useDashboard();
+  const { user } = useAuth();
+  const isViewer = user.teamRole === "viewer";
 
   const handleAnalyze = useCallback(async () => {
     if (!jobDescription.trim()) {
@@ -113,77 +115,77 @@ export default function AnalyzerPage() {
   }, [analysis, jobDescription, router, refreshStats]);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
-        <Link href="/">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-        </Link>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Job Fit Analyzer</h1>
+        <p className="text-muted-foreground mt-2">
+          Paste a job description to see how well it matches your CV
+        </p>
       </div>
 
       <Fade>
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Job Fit Analyzer
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Job Description</Label>
-            <Textarea
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              placeholder="Paste the full job description here..."
-              className="h-40 resize-none"
-            />
-            <p className="text-xs text-muted-foreground">
-              Paste the complete job posting for the most accurate analysis
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <Button
-              onClick={handleAnalyze}
-              disabled={isAnalyzing || !jobDescription.trim()}
-            >
-              <Sparkles className={isAnalyzing ? "animate-spin" : ""} />
-              {isAnalyzing ? "Analyzing..." : "Analyze Job Fit"}
-            </Button>
-
-            {analysis && (
-              <Button
-                variant="outline"
-                onClick={handleCreateJob}
-                disabled={isCreatingJob}
-                className="text-green-700 dark:text-green-400 border-green-700/30 hover:bg-green-500/10"
-              >
-                <Plus />
-                {isCreatingJob ? "Adding..." : "I've Applied"}
-              </Button>
-            )}
-
-            {(jobDescription || analysis) && (
-              <Button variant="outline" onClick={handleClear}>
-                Clear
-              </Button>
-            )}
-          </div>
-
-          {error && (
-            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
-              <p className="text-destructive text-sm">{error}</p>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Analyze a Job Description
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Job Description</Label>
+              <Textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Paste the full job description here..."
+                className="h-40 resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Paste the complete job posting for the most accurate analysis
+              </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={handleAnalyze}
+                disabled={isAnalyzing || !jobDescription.trim()}
+              >
+                <Sparkles className={isAnalyzing ? "animate-spin" : ""} />
+                {isAnalyzing ? "Analyzing..." : "Analyze Job Fit"}
+              </Button>
+
+              {!isViewer && analysis && (
+                <Button
+                  variant="outline"
+                  onClick={handleCreateJob}
+                  disabled={isCreatingJob}
+                  className="text-green-600 dark:text-green-300 border-green-600/30 hover:bg-green-500/10"
+                >
+                  <Plus />
+                  {isCreatingJob ? "Adding..." : "I've Applied"}
+                </Button>
+              )}
+
+              {(jobDescription || analysis) && (
+                <Button variant="outline" onClick={handleClear}>
+                  Clear
+                </Button>
+              )}
+            </div>
+
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
+                <p className="text-destructive text-sm">{error}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </Fade>
 
       {analysis && (
         <Slide direction="up" offset={30} className="space-y-6">
+          {/* Score Card */}
           <Card className="bg-muted border-0">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
@@ -196,10 +198,10 @@ export default function AnalyzerPage() {
                 <div
                   className={`text-2xl font-bold px-3 py-1 rounded-full ${
                     analysis.suitabilityScore >= 80
-                      ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                      ? "bg-green-500/15 text-green-600 dark:text-green-300"
                       : analysis.suitabilityScore >= 60
-                        ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
-                        : "bg-destructive/10 text-destructive"
+                        ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-300"
+                        : "bg-red-500/15 text-red-600 dark:text-red-400"
                   }`}
                 >
                   {analysis.suitabilityScore}%
@@ -209,6 +211,7 @@ export default function AnalyzerPage() {
             </CardContent>
           </Card>
 
+          {/* Matches & Gaps */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="border-l-2 border-l-green-600">
               <CardContent className="p-4">
@@ -221,7 +224,7 @@ export default function AnalyzerPage() {
                       key={index}
                       className="text-sm text-muted-foreground flex items-start"
                     >
-                      <span className="w-1.5 h-1.5 bg-green-600 rounded-full mt-2 mr-2 flex-shrink-0" />
+                      <span className="w-1.5 h-1.5 bg-green-600 rounded-full mt-2 mr-2 shrink-0" />
                       {match}
                     </li>
                   ))}
@@ -240,7 +243,7 @@ export default function AnalyzerPage() {
                       key={index}
                       className="text-sm text-muted-foreground flex items-start"
                     >
-                      <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0" />
+                      <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 mr-2 shrink-0" />
                       {gap}
                     </li>
                   ))}
@@ -249,6 +252,7 @@ export default function AnalyzerPage() {
             </Card>
           </div>
 
+          {/* Salary */}
           {analysis.salaryRange && (
             <Card>
               <CardContent className="p-4">
@@ -265,6 +269,7 @@ export default function AnalyzerPage() {
             </Card>
           )}
 
+          {/* Cover Letter */}
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -317,6 +322,7 @@ export default function AnalyzerPage() {
             </CardContent>
           </Card>
 
+          {/* Requirements & Responsibilities */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardContent className="p-4">
@@ -329,7 +335,7 @@ export default function AnalyzerPage() {
                       key={index}
                       className="text-sm text-muted-foreground flex items-start"
                     >
-                      <span className="w-1 h-1 bg-muted-foreground rounded-full mt-2 mr-2 flex-shrink-0" />
+                      <span className="w-1 h-1 bg-muted-foreground rounded-full mt-2 mr-2 shrink-0" />
                       {req}
                     </li>
                   ))}
@@ -348,7 +354,7 @@ export default function AnalyzerPage() {
                       key={index}
                       className="text-sm text-muted-foreground flex items-start"
                     >
-                      <span className="w-1 h-1 bg-muted-foreground rounded-full mt-2 mr-2 flex-shrink-0" />
+                      <span className="w-1 h-1 bg-muted-foreground rounded-full mt-2 mr-2 shrink-0" />
                       {resp}
                     </li>
                   ))}
