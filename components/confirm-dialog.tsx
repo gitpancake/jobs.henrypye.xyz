@@ -68,46 +68,48 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   return (
     <ConfirmContext.Provider value={{ confirm, alert }}>
       {children}
-      <Dialog
-        open={state?.open ?? false}
-        onOpenChange={(open) => { if (!open) handleClose(false); }}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{state?.options.title}</DialogTitle>
-            <DialogDescription className="whitespace-pre-wrap">
-              {state?.options.description}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2 pt-2">
-            {state?.options.mode === "confirm" ? (
-              <>
+      {state && (
+        <Dialog
+          open={state.open}
+          onOpenChange={(open) => { if (!open) handleClose(false); }}
+        >
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{state.options.title}</DialogTitle>
+              <DialogDescription className="whitespace-pre-wrap">
+                {state.options.description}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2 pt-2">
+              {state.options.mode === "confirm" ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleClose(false)}
+                  >
+                    {(state.options as ConfirmOptions & { mode: "confirm" }).cancelLabel ?? "Cancel"}
+                  </Button>
+                  <Button
+                    variant={(state.options as ConfirmOptions & { mode: "confirm" }).variant ?? "default"}
+                    size="sm"
+                    onClick={() => handleClose(true)}
+                  >
+                    {(state.options as ConfirmOptions & { mode: "confirm" }).confirmLabel ?? "Confirm"}
+                  </Button>
+                </>
+              ) : (
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleClose(false)}
-                >
-                  {(state.options as ConfirmOptions).cancelLabel ?? "Cancel"}
-                </Button>
-                <Button
-                  variant={(state.options as ConfirmOptions).variant ?? "default"}
                   size="sm"
                   onClick={() => handleClose(true)}
                 >
-                  {(state.options as ConfirmOptions).confirmLabel ?? "Confirm"}
+                  {(state.options as AlertOptions & { mode: "alert" }).closeLabel ?? "OK"}
                 </Button>
-              </>
-            ) : (
-              <Button
-                size="sm"
-                onClick={() => handleClose(true)}
-              >
-                {(state?.options as AlertOptions).closeLabel ?? "OK"}
-              </Button>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </ConfirmContext.Provider>
   );
 }
