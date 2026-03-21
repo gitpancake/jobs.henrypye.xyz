@@ -11,6 +11,9 @@ import {
   FileText,
   Upload,
   BarChart3,
+  ChevronsUpDown,
+  Check,
+  Users,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,13 +31,28 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeTogglerButton } from "@/components/animate-ui/components/buttons/theme-toggler";
 import ProfileDialog from "@/components/profile-dialog";
 import PendingInviteBanner from "@/components/pending-invite-banner";
 import { DashboardContext } from "@/lib/dashboard-context";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import Link from "next/link";
+
+interface TeamInfo {
+  id: string;
+  name: string;
+  role: string;
+  memberCount: number;
+  isActive: boolean;
+}
 
 interface Stats {
   total: number;
@@ -66,10 +84,13 @@ const navItems = [
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [teams, setTeams] = useState<TeamInfo[]>([]);
   const [isObfuscated, setIsObfuscated] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+
+  const activeTeam = teams.find((t) => t.isActive) ?? teams[0];
 
   const refreshStats = useCallback(async () => {
     try {
@@ -86,6 +107,35 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     refreshStats();
   }, [pathname, refreshStats]);
 
+  useEffect(() => {
+    async function fetchTeams() {
+      try {
+        const res = await fetch("/api/teams");
+        if (res.ok) setTeams(await res.json());
+      } catch {
+        // Silent
+      }
+    }
+    fetchTeams();
+  }, []);
+
+  const handleSwitchTeam = async (teamId: string) => {
+    if (teamId === user.activeTeamId) return;
+    try {
+      const res = await fetch("/api/teams/switch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId }),
+      });
+      if (!res.ok) throw new Error();
+      await refreshUser();
+      toast.success("Switched team");
+      window.location.reload();
+    } catch {
+      toast.error("Failed to switch team");
+    }
+  };
+
   return (
     <DashboardContext.Provider value={{ refreshStats, isObfuscated }}>
       <SidebarProvider
@@ -96,6 +146,31 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             <h1 className="font-mono text-sm font-bold text-sidebar-primary tracking-tight">
               jobs.
             </h1>
+            {teams.length > 1 && activeTeam && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="mt-2 flex w-full items-center justify-between rounded-md border border-sidebar-border bg-sidebar-accent/50 px-2.5 py-1.5 text-xs text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+                    <span className="flex items-center gap-1.5 truncate">
+                      <Users className="size-3 shrink-0 text-sidebar-foreground/60" />
+                      <span className="truncate font-medium">{activeTeam.name}</span>
+                    </span>
+                    <ChevronsUpDown className="size-3 shrink-0 text-sidebar-foreground/40" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
+                  {teams.map((team) => (
+                    <DropdownMenuItem
+                      key={team.id}
+                      onClick={() => handleSwitchTeam(team.id)}
+                      className="flex items-center justify-between gap-2"
+                    >
+                      <span className="truncate">{team.name}</span>
+                      {team.isActive && <Check className="size-3.5 shrink-0 text-primary" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup className="py-0">

@@ -82,11 +82,11 @@ export default function PendingInviteBanner() {
   if (visible.length === 0) return null;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 mb-6">
       {visible.map((invite) => (
         <div
           key={invite.id}
-          className="flex items-center gap-3 rounded-lg border bg-primary/5 border-primary/20 px-4 py-2.5"
+          className="flex items-center gap-3 rounded-lg border-2 bg-primary/5 border-primary/25 px-4 py-3.5 shadow-sm"
         >
           <UserPlus className="size-4 text-primary shrink-0" />
           <p className="flex-1 text-sm">
