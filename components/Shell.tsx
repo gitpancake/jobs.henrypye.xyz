@@ -142,19 +142,19 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         style={{ "--sidebar-width": "13rem" } as React.CSSProperties}
       >
         <Sidebar>
-          <SidebarHeader className="px-5 py-5">
-            <h1 className="font-mono text-sm font-bold text-sidebar-primary tracking-tight">
+          <SidebarHeader className="px-3 pt-4 pb-2">
+            <h1 className="font-mono text-sm font-bold text-sidebar-primary tracking-tight px-2 mb-1">
               jobs.
             </h1>
             {teams.length > 1 && activeTeam && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="mt-2 flex w-full items-center justify-between rounded-md border border-sidebar-border bg-sidebar-accent/50 px-2.5 py-1.5 text-xs text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
-                    <span className="flex items-center gap-1.5 truncate">
-                      <Users className="size-3 shrink-0 text-sidebar-foreground/60" />
+                  <button className="flex w-full items-center justify-between rounded-md border border-sidebar-border bg-sidebar-accent/50 px-2.5 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+                    <span className="flex items-center gap-2 truncate">
+                      <Users className="size-4 shrink-0 text-sidebar-foreground/70" />
                       <span className="truncate font-medium">{activeTeam.name}</span>
                     </span>
-                    <ChevronsUpDown className="size-3 shrink-0 text-sidebar-foreground/40" />
+                    <ChevronsUpDown className="size-3.5 shrink-0 text-sidebar-foreground/40" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
