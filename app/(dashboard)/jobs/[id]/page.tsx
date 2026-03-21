@@ -30,6 +30,7 @@ import { Fade } from "@/components/animate-ui/primitives/effects/fade";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useDashboard } from "@/lib/dashboard-context";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConfirm } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 
 const statusColors: Record<JobStatus, string> = {
@@ -50,6 +51,7 @@ export default function JobDetailPage() {
   const { refreshStats } = useDashboard();
   const { user } = useAuth();
   const isViewer = user.teamRole === "viewer";
+  const { confirm } = useConfirm();
 
   const [job, setJob] = useState<Job | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -130,7 +132,13 @@ export default function JobDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Delete this job application?")) return;
+    const ok = await confirm({
+      title: "Delete job",
+      description: "Are you sure you want to delete this job application?",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!ok) return;
     try {
       const res = await fetch(`/api/jobs/${jobId}`, { method: "DELETE" });
       if (!res.ok) throw new Error();

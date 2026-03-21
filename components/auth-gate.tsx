@@ -4,6 +4,7 @@ import { useState, useEffect, type ReactNode } from "react";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { AuthProvider, type AuthUser } from "@/contexts/AuthContext";
+import { ConfirmProvider } from "@/components/confirm-dialog";
 import Shell from "./Shell";
 import {
   Card,
@@ -101,7 +102,9 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   if (status === "unlocked" && user) {
     return (
       <AuthProvider user={user}>
-        <Shell>{children}</Shell>
+        <ConfirmProvider>
+          <Shell>{children}</Shell>
+        </ConfirmProvider>
       </AuthProvider>
     );
   }

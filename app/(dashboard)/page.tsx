@@ -9,6 +9,8 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { obfuscateJobs } from "@/lib/obfuscation";
 import { useDashboard } from "@/lib/dashboard-context";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConfirm } from "@/components/confirm-dialog";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -23,6 +25,7 @@ export default function DashboardPage() {
   const { refreshStats, isObfuscated } = useDashboard();
   const { user } = useAuth();
   const isViewer = user.teamRole === "viewer";
+  const { confirm, alert } = useConfirm();
 
   const displayJobs = useMemo(() => {
     return isObfuscated ? obfuscateJobs(jobs) : jobs;
@@ -73,7 +76,13 @@ export default function DashboardPage() {
 
   const handleDeleteJob = useCallback(
     async (jobId: string) => {
-      if (!confirm("Are you sure you want to delete this job?")) return;
+      const ok = await confirm({
+        title: "Delete job",
+        description: "Are you sure you want to delete this job?",
+        confirmLabel: "Delete",
+        variant: "destructive",
+      });
+      if (!ok) return;
       setLoadingOperation(`delete-${jobId}`);
       setError(null);
       try {
@@ -181,12 +190,13 @@ export default function DashboardPage() {
   );
 
   const handleClearAllJobs = useCallback(async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete ALL jobs? This action cannot be undone.",
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: "Clear all jobs",
+      description: "Are you sure you want to delete ALL jobs? This action cannot be undone.",
+      confirmLabel: "Clear All",
+      variant: "destructive",
+    });
+    if (!ok) return;
     setLoadingOperation("clear-all");
     setError(null);
     try {
@@ -201,12 +211,12 @@ export default function DashboardPage() {
   }, [refreshData]);
 
   const handleBatchAnalyze = useCallback(async () => {
-    if (
-      !confirm(
-        "This will analyze all jobs with descriptions using AI. This may take several minutes and use API credits. Continue?",
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: "Analyze all jobs",
+      description: "This will analyze all jobs with descriptions using AI. This may take several minutes and use API credits.",
+      confirmLabel: "Analyze All",
+    });
+    if (!ok) return;
     setLoadingOperation("batch-analyze");
     setError(null);
     try {
@@ -216,9 +226,10 @@ export default function DashboardPage() {
       const data = await response.json();
       if (!response.ok)
         throw new Error(data.error || "Failed to run batch analysis");
-      alert(
-        `${data.message}\n\nAnalyzed: ${data.analyzed}\nErrors: ${data.errors || 0}\nTotal: ${data.total}`,
-      );
+      await alert({
+        title: "Analysis complete",
+        description: `${data.message}\n\nAnalyzed: ${data.analyzed}\nErrors: ${data.errors || 0}\nTotal: ${data.total}`,
+      });
       await refreshData();
     } catch (err) {
       setError(
@@ -237,9 +248,12 @@ export default function DashboardPage() {
 
   const handleArchiveRejected = useCallback(async () => {
     const rejectedCount = jobs.filter(job => job.status === 'REJECTED').length;
-    if (!confirm(
-      `Archive ${rejectedCount} rejected job${rejectedCount === 1 ? '' : 's'} from previous search? This will hide them from the main view.`
-    )) return;
+    const ok = await confirm({
+      title: "Archive rejected jobs",
+      description: `Archive ${rejectedCount} rejected job${rejectedCount === 1 ? '' : 's'}? This will hide them from the main view.`,
+      confirmLabel: "Archive",
+    });
+    if (!ok) return;
     
     setLoadingOperation("archive-rejected");
     setError(null);
@@ -250,7 +264,7 @@ export default function DashboardPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to archive rejected jobs");
       
-      alert(data.message);
+      toast.success(data.message);
       await refreshData();
     } catch (err) {
       setError(

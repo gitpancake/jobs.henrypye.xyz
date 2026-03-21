@@ -38,6 +38,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/confirm-dialog";
 
 function getInitials(name: string | null, email: string): string {
   if (name) {
@@ -319,6 +320,7 @@ function ProfileTab() {
 
 function TeamTab() {
   const { user, refreshUser } = useAuth();
+  const { confirm } = useConfirm();
   const [teams, setTeams] = useState<TeamInfo[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
@@ -448,8 +450,13 @@ function TeamTab() {
   };
 
   const handleRemoveMember = async (memberId: string, isSelf: boolean) => {
-    const confirmMsg = isSelf ? "Leave this team?" : "Remove this member?";
-    if (!confirm(confirmMsg)) return;
+    const ok = await confirm({
+      title: isSelf ? "Leave team" : "Remove member",
+      description: isSelf ? "Are you sure you want to leave this team?" : "Are you sure you want to remove this member?",
+      confirmLabel: isSelf ? "Leave" : "Remove",
+      variant: "destructive",
+    });
+    if (!ok) return;
     try {
       const res = await fetch(`/api/teams/${user.activeTeamId}/members/${memberId}`, {
         method: "DELETE",
