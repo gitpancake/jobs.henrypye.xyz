@@ -17,6 +17,7 @@ interface JobCardProps {
   onStatusChange: (jobId: string, status: JobStatus) => void;
   onAnalyze?: (jobId: string) => void;
   isAnalyzing?: boolean;
+  readOnly?: boolean;
 }
 
 const statusColors: Record<JobStatus, string> = {
@@ -27,14 +28,15 @@ const statusColors: Record<JobStatus, string> = {
 };
 
 
-export const JobCard = memo(function JobCard({ 
-  job, 
-  onEdit, 
+export const JobCard = memo(function JobCard({
+  job,
+  onEdit,
   onDelete,
   onDuplicate,
   onStatusChange,
   onAnalyze,
-  isAnalyzing = false
+  isAnalyzing = false,
+  readOnly = false
 }: JobCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasAIAnalysis = job.aiAnalyzedAt && (job.suitabilityReason || job.requirements?.length > 0 || job.responsibilities?.length > 0 || job.benefits?.length > 0 || job.suggestedNextSteps?.length > 0);
@@ -212,50 +214,55 @@ export const JobCard = memo(function JobCard({
           <StatusCombobox
             value={job.status}
             onValueChange={(status) => onStatusChange(job.id, status)}
+            disabled={readOnly}
           />
 
-          {onAnalyze && job.description && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => onAnalyze(job.id)}
-              disabled={isAnalyzing}
-              aria-label={`${isAnalyzing ? 'Analyzing' : 'Analyze'} job with AI for ${job.title} at ${job.company}`}
-              title={isAnalyzing ? 'Analyzing with AI...' : 'Analyze with AI'}
-            >
-              <Sparkles
-                className={`h-4 w-4 ${isAnalyzing ? 'animate-spin text-primary' : ''}`}
-                aria-hidden="true"
-              />
-            </Button>
+          {!readOnly && (
+            <>
+              {onAnalyze && job.description && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => onAnalyze(job.id)}
+                  disabled={isAnalyzing}
+                  aria-label={`${isAnalyzing ? 'Analyzing' : 'Analyze'} job with AI for ${job.title} at ${job.company}`}
+                  title={isAnalyzing ? 'Analyzing with AI...' : 'Analyze with AI'}
+                >
+                  <Sparkles
+                    className={`h-4 w-4 ${isAnalyzing ? 'animate-spin text-primary' : ''}`}
+                    aria-hidden="true"
+                  />
+                </Button>
+              )}
+
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => onEdit(job)}
+                aria-label={`Edit job application for ${job.title} at ${job.company}`}
+              >
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => onDuplicate(job)}
+                aria-label={`Duplicate job application for ${job.title} at ${job.company}`}
+              >
+                <Copy className="h-4 w-4" aria-hidden="true" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => onDelete(job.id)}
+                aria-label={`Delete job application for ${job.title} at ${job.company}`}
+              >
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </>
           )}
-
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => onEdit(job)}
-            aria-label={`Edit job application for ${job.title} at ${job.company}`}
-          >
-            <Pencil className="h-4 w-4" aria-hidden="true" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => onDuplicate(job)}
-            aria-label={`Duplicate job application for ${job.title} at ${job.company}`}
-          >
-            <Copy className="h-4 w-4" aria-hidden="true" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => onDelete(job.id)}
-            aria-label={`Delete job application for ${job.title} at ${job.company}`}
-          >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
-          </Button>
         </div>
       </div>
       </CardContent>

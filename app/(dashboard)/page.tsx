@@ -11,6 +11,7 @@ import { ErrorMessage } from "@/components/error-message";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { obfuscateJobs } from "@/lib/obfuscation";
 import { useDashboard } from "@/lib/dashboard-context";
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
 export default function DashboardPage() {
@@ -24,6 +25,8 @@ export default function DashboardPage() {
   >(null);
   const router = useRouter();
   const { refreshStats, isObfuscated } = useDashboard();
+  const { user } = useAuth();
+  const isViewer = user.teamRole === "viewer";
 
   const displayJobs = useMemo(() => {
     return isObfuscated ? obfuscateJobs(jobs) : jobs;
@@ -274,52 +277,54 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Fade className="flex flex-wrap justify-end gap-2 mb-6">
-        {jobs.filter(job => job.status === 'REJECTED').length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleArchiveRejected}
-            disabled={loadingOperation === "archive-rejected"}
-          >
-            <Archive />
-            {loadingOperation === "archive-rejected" 
-              ? "Archiving..." 
-              : `Archive Previous Search (${jobs.filter(job => job.status === 'REJECTED').length})`}
-          </Button>
-        )}
-        {jobs.length > 0 && (
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleClearAllJobs}
-            disabled={loadingOperation === "clear-all"}
-          >
-            <Trash2 />
-            {loadingOperation === "clear-all" ? "Clearing..." : "Clear All"}
-          </Button>
-        )}
-        {jobs.filter((job) => job.description && !job.aiAnalyzedAt).length >
-          0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleBatchAnalyze}
-            disabled={loadingOperation === "batch-analyze"}
-          >
-            <Sparkles />
-            {loadingOperation === "batch-analyze"
-              ? "Analyzing..."
-              : `Analyze All (${jobs.filter((job) => job.description && !job.aiAnalyzedAt).length})`}
-          </Button>
-        )}
-        <Link href="/jobs/new">
-          <Button size="sm">
-            <Plus />
-            Add Job
-          </Button>
-        </Link>
-      </Fade>
+      {!isViewer && (
+        <Fade className="flex flex-wrap justify-end gap-2 mb-6">
+          {jobs.filter(job => job.status === 'REJECTED').length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleArchiveRejected}
+              disabled={loadingOperation === "archive-rejected"}
+            >
+              <Archive />
+              {loadingOperation === "archive-rejected"
+                ? "Archiving..."
+                : `Archive Previous Search (${jobs.filter(job => job.status === 'REJECTED').length})`}
+            </Button>
+          )}
+          {jobs.length > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleClearAllJobs}
+              disabled={loadingOperation === "clear-all"}
+            >
+              <Trash2 />
+              {loadingOperation === "clear-all" ? "Clearing..." : "Clear All"}
+            </Button>
+          )}
+          {jobs.filter((job) => job.description && !job.aiAnalyzedAt).length >
+            0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBatchAnalyze}
+              disabled={loadingOperation === "batch-analyze"}
+            >
+              <Sparkles />
+              {loadingOperation === "batch-analyze"
+                ? "Analyzing..."
+                : `Analyze All (${jobs.filter((job) => job.description && !job.aiAnalyzedAt).length})`}
+            </Button>
+          )}
+          <Link href="/jobs/new">
+            <Button size="sm">
+              <Plus />
+              Add Job
+            </Button>
+          </Link>
+        </Fade>
+      )}
 
       {error && (
         <ErrorMessage error={error} onDismiss={() => setError(null)} />
@@ -335,6 +340,7 @@ export default function DashboardPage() {
         analyzingJobId={analyzingJobId}
         recentlyAnalyzedJobId={recentlyAnalyzedJobId}
         onClearRecentlyAnalyzed={handleClearRecentlyAnalyzed}
+        readOnly={isViewer}
       />
     </>
   );

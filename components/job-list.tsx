@@ -22,11 +22,12 @@ interface JobListProps {
   analyzingJobId?: string | null;
   recentlyAnalyzedJobId?: string | null;
   onClearRecentlyAnalyzed?: () => void;
+  readOnly?: boolean;
 }
 
 const statusOptions: JobStatus[] = ['APPLIED', 'INTERVIEWING', 'ACCEPTED', 'REJECTED'];
 
-export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, onAnalyze, analyzingJobId, recentlyAnalyzedJobId, onClearRecentlyAnalyzed }: JobListProps) {
+export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, onAnalyze, analyzingJobId, recentlyAnalyzedJobId, onClearRecentlyAnalyzed, readOnly = false }: JobListProps) {
   const [filter, setFilter] = useState<JobStatus | 'ALL'>('APPLIED');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNoAIAnalysisOnly, setShowNoAIAnalysisOnly] = useState(false);
@@ -316,6 +317,7 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
               onStatusChange={onStatusChange}
               onAnalyze={onAnalyze}
               isAnalyzing={analyzingJobId === job.id}
+              readOnly={readOnly}
             />
           ))}
         </div>
