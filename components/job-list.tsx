@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { DateRange } from 'react-day-picker';
 import { Job, JobStatus } from '@/lib/types';
 import { JobCard } from './job-card';
-import { Search, X, Plus, Settings, Sparkles, Archive, Trash2 } from 'lucide-react';
+import { Search, X, Plus, Settings, Sparkles, Archive, Trash2, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -326,7 +326,29 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
         </label>
       </div>
 
-      {filteredJobs.length === 0 ? (
+      {loadingOperation === 'batch-analyze' ? (
+        <div className="flex flex-col items-center justify-center py-16 space-y-4">
+          <div className="relative">
+            <Sparkles className="h-10 w-10 text-primary animate-pulse" />
+            <Loader2 className="h-6 w-6 text-primary animate-spin absolute -top-1 -right-1" />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-lg font-medium text-foreground">Analyzing all jobs...</p>
+            <p className="text-sm text-muted-foreground">
+              Running AI analysis on {unanalyzedCount} job{unanalyzedCount === 1 ? '' : 's'}. This may take a few minutes.
+            </p>
+          </div>
+          <div className="flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full bg-primary animate-bounce"
+                style={{ animationDelay: `${i * 150}ms` }}
+              />
+            ))}
+          </div>
+        </div>
+      ) : filteredJobs.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           {searchQuery ? (
             <div>
