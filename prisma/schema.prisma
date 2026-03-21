@@ -57,6 +57,29 @@ model UserCV {
   @@map("user_cv")
 }
 
+model Outreach {
+  id            String         @id @default(cuid())
+  contactName   String
+  contactTitle  String?
+  company       String
+  method        OutreachMethod
+  bio           String?
+  notes         String?
+  responded     Boolean        @default(false)
+  responseDate  DateTime?
+  outreachDate  DateTime       @default(now())
+  archived      Boolean        @default(false)
+  userId        String         @map("user_id")
+  teamId        String         @map("team_id") @db.Uuid
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  shared_teams  SharedTeam     @relation(fields: [teamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([teamId], map: "idx_outreach_team_id")
+  @@index([userId], map: "idx_outreach_user_id")
+  @@map("outreach")
+}
+
 model SharedUser {
   id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   firebaseUid  String             @unique @map("firebase_uid")
@@ -80,6 +103,7 @@ model SharedTeam {
   createdAt      DateTime?          @default(now()) @map("created_at") @db.Timestamptz(6)
   safe_mode      Boolean            @default(false)
   jobs           Job[]
+  outreach       Outreach[]
   invites        SharedTeamInvite[]
   members        SharedTeamMember[]
   creator        SharedUser         @relation("CreatedTeams", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -573,6 +597,17 @@ model trip_projects {
   @@index([team_id], map: "idx_trip_projects_team_id")
   @@index([updated_at(sort: Desc)], map: "idx_trip_projects_updated_at")
   @@index([user_id], map: "idx_trip_projects_user_id")
+}
+
+enum OutreachMethod {
+  LINKEDIN
+  PHONE
+  TEXT
+  WHATSAPP
+  TELEGRAM
+  IN_PERSON
+  EMAIL
+  OTHER
 }
 
 enum JobStatus {

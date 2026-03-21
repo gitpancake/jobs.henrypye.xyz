@@ -32,3 +32,24 @@ export const BulkImportSchema = z.object({
 export type CreateJobFormData = z.infer<typeof CreateJobSchema>;
 export type UpdateJobFormData = z.infer<typeof UpdateJobSchema>;
 export type BulkImportFormData = z.infer<typeof BulkImportSchema>;
+
+export const OutreachMethodEnum = z.enum([
+  'LINKEDIN', 'PHONE', 'TEXT', 'WHATSAPP', 'TELEGRAM', 'IN_PERSON', 'EMAIL', 'OTHER'
+]);
+
+export const CreateOutreachSchema = z.object({
+  contactName: z.string().min(1, 'Contact name is required'),
+  contactTitle: z.string().optional(),
+  company: z.string().min(1, 'Company name is required'),
+  method: OutreachMethodEnum,
+  bio: z.string().optional(),
+  notes: z.string().optional(),
+  responded: z.boolean().optional(),
+  responseDate: z.date().optional().nullable(),
+  outreachDate: z.date().optional(),
+});
+
+export const UpdateOutreachSchema = CreateOutreachSchema.partial();
+
+export type CreateOutreachFormData = z.infer<typeof CreateOutreachSchema>;
+export type UpdateOutreachFormData = z.infer<typeof UpdateOutreachSchema>;

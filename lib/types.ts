@@ -76,6 +76,38 @@ export interface AIAnalysisResult {
     suggestedNextSteps: string[];
 }
 
+export type OutreachMethod = "LINKEDIN" | "PHONE" | "TEXT" | "WHATSAPP" | "TELEGRAM" | "IN_PERSON" | "EMAIL" | "OTHER";
+
+export interface Outreach {
+    id: string;
+    contactName: string;
+    contactTitle?: string | null;
+    company: string;
+    method: OutreachMethod;
+    bio?: string | null;
+    notes?: string | null;
+    responded: boolean;
+    responseDate?: Date | null;
+    outreachDate: Date;
+    archived: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateOutreachInput {
+    contactName: string;
+    contactTitle?: string;
+    company: string;
+    method: OutreachMethod;
+    bio?: string;
+    notes?: string;
+    responded?: boolean;
+    responseDate?: Date | null;
+    outreachDate?: Date;
+}
+
+export interface UpdateOutreachInput extends Partial<CreateOutreachInput> {}
+
 export interface RejectionInsightsResult {
     jobsAnalyzed: number;
     commonRequirements: string[];

@@ -10,6 +10,7 @@ import {
   Sparkles,
   FileText,
   BarChart3,
+  Send,
   ChevronsUpDown,
   Check,
   Users,
@@ -77,6 +78,7 @@ function getInitials(name: string | null, email: string): string {
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/outreach", label: "Outreach", icon: Send },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/analyzer", label: "Job Fit Analyzer", icon: Sparkles },
   { href: "/cv", label: "Manage CV", icon: FileText },
