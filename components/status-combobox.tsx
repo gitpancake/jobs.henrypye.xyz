@@ -17,10 +17,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 
 const statusOptions: { value: JobStatus; label: string; color: string }[] = [
-  { value: 'APPLIED', label: 'Applied', color: 'text-blue-600' },
-  { value: 'INTERVIEWING', label: 'Interviewing', color: 'text-yellow-600' },
-  { value: 'ACCEPTED', label: 'Accepted', color: 'text-green-600' },
-  { value: 'REJECTED', label: 'Rejected', color: 'text-red-600' },
+  { value: 'APPLIED', label: 'Applied', color: 'text-blue-600 dark:text-blue-400' },
+  { value: 'INTERVIEWING', label: 'Interviewing', color: 'text-yellow-600 dark:text-yellow-300' },
+  { value: 'ACCEPTED', label: 'Accepted', color: 'text-green-600 dark:text-green-300' },
+  { value: 'REJECTED', label: 'Rejected', color: 'text-red-600 dark:text-red-400' },
 ];
 
 interface StatusComboboxProps {

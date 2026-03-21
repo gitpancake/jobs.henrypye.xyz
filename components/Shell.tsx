@@ -9,11 +9,11 @@ import {
   LayoutDashboard,
   Sparkles,
   FileText,
-  Upload,
   BarChart3,
   ChevronsUpDown,
   Check,
   Users,
+  PanelLeft,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,6 +28,7 @@ import {
   SidebarMenuButton,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -79,7 +80,6 @@ const navItems = [
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/analyzer", label: "Job Fit Analyzer", icon: Sparkles },
   { href: "/cv", label: "Manage CV", icon: FileText },
-  { href: "/bulk-import", label: "Bulk Import", icon: Upload },
 ];
 
 export default function Shell({ children }: { children: React.ReactNode }) {
@@ -256,9 +256,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <header className="flex items-center justify-between border-b px-4 py-3 lg:px-8">
+          <header className="flex items-center justify-between border-b px-3 py-2.5 sm:px-4 sm:py-3 lg:px-8">
             <div className="flex items-center gap-3">
-              <SidebarTrigger className="-ml-1" />
+              <SidebarTrigger className="-ml-1">
+                <PanelLeft className="h-5 w-5" />
+              </SidebarTrigger>
             </div>
             <div className="flex items-center gap-1">
               <ThemeTogglerButton

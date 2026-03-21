@@ -21,10 +21,10 @@ interface JobCardProps {
 }
 
 const statusColors: Record<JobStatus, string> = {
-  APPLIED: 'bg-primary/10 text-primary border-primary/20',
-  INTERVIEWING: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20',
-  ACCEPTED: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
-  REJECTED: 'bg-destructive/10 text-destructive border-destructive/20',
+  APPLIED: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30',
+  INTERVIEWING: 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-300 border-yellow-500/30',
+  ACCEPTED: 'bg-green-500/15 text-green-600 dark:text-green-300 border-green-500/30',
+  REJECTED: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30',
 };
 
 
@@ -44,10 +44,10 @@ export const JobCard = memo(function JobCard({
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-semibold text-foreground">{job.title}</h3>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <h3 className="text-base sm:text-lg font-semibold text-foreground">{job.title}</h3>
             <Badge variant="outline" className={statusColors[job.status]}>
               {job.status.replace('_', ' ')}
             </Badge>
@@ -55,9 +55,9 @@ export const JobCard = memo(function JobCard({
               <button
                 onClick={() => hasAIAnalysis && setIsExpanded(!isExpanded)}
                 className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
-                  job.suitabilityScore >= 80 ? 'bg-green-500/10 text-green-700 dark:text-green-400' :
-                  job.suitabilityScore >= 60 ? 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400' :
-                  'bg-destructive/10 text-destructive'
+                  job.suitabilityScore >= 80 ? 'bg-green-500/15 text-green-600 dark:text-green-300' :
+                  job.suitabilityScore >= 60 ? 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-300' :
+                  'bg-red-500/15 text-red-600 dark:text-red-400'
                 } ${hasAIAnalysis ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
                 disabled={!hasAIAnalysis}
                 aria-label={hasAIAnalysis ? `${isExpanded ? 'Hide' : 'Show'} AI analysis details` : 'AI analysis unavailable'}
@@ -71,44 +71,44 @@ export const JobCard = memo(function JobCard({
               </button>
             )}
           </div>
-          
+
           <p className="text-foreground font-medium mb-1">{job.company}</p>
 
           {job.location && (
-            <p className="text-muted-foreground text-sm mb-2">{job.location}</p>
+            <p className="text-muted-foreground/80 dark:text-muted-foreground text-sm mb-2">{job.location}</p>
           )}
-          
+
           {(job.salaryMin || job.salaryMax) && (
-            <p className="text-green-700 dark:text-green-400 text-sm font-medium mb-2">
-              {job.salaryMin && job.salaryMax ? 
+            <p className="text-green-600 dark:text-green-300 text-sm font-medium mb-2">
+              {job.salaryMin && job.salaryMax ?
                 `${job.salaryCurrency || '$'}${job.salaryMin.toLocaleString()} - ${job.salaryCurrency || '$'}${job.salaryMax.toLocaleString()}` :
-                job.salaryMin ? 
+                job.salaryMin ?
                   `${job.salaryCurrency || '$'}${job.salaryMin.toLocaleString()}+` :
                   `Up to ${job.salaryCurrency || '$'}${job.salaryMax?.toLocaleString()}`
               } {job.workArrangement && `• ${job.workArrangement}`}
             </p>
           )}
-          
+
           {job.description && (
-            <p className="text-muted-foreground text-sm mb-2">
-              {job.description.length > 150 
-                ? `${job.description.substring(0, 150)}...` 
+            <p className="text-muted-foreground/80 dark:text-muted-foreground text-sm mb-2 hidden sm:block">
+              {job.description.length > 150
+                ? `${job.description.substring(0, 150)}...`
                 : job.description}
             </p>
           )}
-          
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mb-2">
             <span>Applied: {format(new Date(job.applicationDate), 'MMM d, yyyy')}</span>
             {job.linkedinContactName && (
               <span className="flex items-center gap-1">
                 Contact: {job.linkedinContactName}
                 {job.hasMessagedContact && (
-                  <span className="text-green-700 dark:text-green-400" aria-label="Contact messaged">✓</span>
+                  <span className="text-green-600 dark:text-green-300" aria-label="Contact messaged">✓</span>
                 )}
               </span>
             )}
           </div>
-          
+
           {job.linkedinContactUrl && (
             <a
               href={job.linkedinContactUrl}
@@ -120,7 +120,7 @@ export const JobCard = memo(function JobCard({
               LinkedIn Profile <ExternalLink className="h-3 w-3" aria-hidden="true" />
             </a>
           )}
-          
+
           {job.notes && (
             <p className="text-muted-foreground text-sm mt-2 italic">{job.notes}</p>
           )}
@@ -210,7 +210,7 @@ export const JobCard = memo(function JobCard({
           )}
         </div>
         
-        <div className="flex items-center gap-1 ml-4">
+        <div className="flex items-center gap-1 sm:ml-4 shrink-0">
           <StatusCombobox
             value={job.status}
             onValueChange={(status) => onStatusChange(job.id, status)}

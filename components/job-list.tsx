@@ -4,13 +4,20 @@ import { useState, useMemo, useEffect } from 'react';
 import { DateRange } from 'react-day-picker';
 import { Job, JobStatus } from '@/lib/types';
 import { JobCard } from './job-card';
-import { Search, Calendar, X } from 'lucide-react';
+import { Search, X, Plus, Settings, Sparkles, Archive, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { StatusFilterCombobox } from '@/components/status-filter-combobox';
 import { DateFilterCombobox } from '@/components/date-filter-combobox';
 import { DateRangePicker } from '@/components/date-range-picker';
+import Link from 'next/link';
 
 interface JobListProps {
   jobs: Job[];
@@ -23,11 +30,18 @@ interface JobListProps {
   recentlyAnalyzedJobId?: string | null;
   onClearRecentlyAnalyzed?: () => void;
   readOnly?: boolean;
+  // Batch action handlers
+  onBatchAnalyze?: () => void;
+  onArchiveRejected?: () => void;
+  onClearAll?: () => void;
+  loadingOperation?: string | null;
+  unanalyzedCount?: number;
+  rejectedCount?: number;
 }
 
 const statusOptions: JobStatus[] = ['APPLIED', 'INTERVIEWING', 'ACCEPTED', 'REJECTED'];
 
-export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, onAnalyze, analyzingJobId, recentlyAnalyzedJobId, onClearRecentlyAnalyzed, readOnly = false }: JobListProps) {
+export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, onAnalyze, analyzingJobId, recentlyAnalyzedJobId, onClearRecentlyAnalyzed, readOnly = false, onBatchAnalyze, onArchiveRejected, onClearAll, loadingOperation, unanalyzedCount = 0, rejectedCount = 0 }: JobListProps) {
   const [filter, setFilter] = useState<JobStatus | 'ALL'>('APPLIED');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNoAIAnalysisOnly, setShowNoAIAnalysisOnly] = useState(false);
@@ -153,59 +167,45 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
 
   return (
     <div className="space-y-4">
-      {/* Toolbar - Filters */}
-      <div className="bg-muted/50 border rounded-lg p-3">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          {/* Left side - Filter Controls */}
-          <div className="flex items-center gap-4 flex-wrap">
-            {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground font-medium">Status:</span>
-              <StatusFilterCombobox
-                value={filter}
-                onValueChange={(status) => setFilter(status)}
-                className="w-[140px]"
-              />
-            </div>
-
-            <div className="h-4 w-px bg-border" />
-
-            {/* Date Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground font-medium">Date:</span>
-              <DateFilterCombobox
-                value={dateFilter}
-                onValueChange={(value) => {
-                  setDateFilter(value);
-                  setDateRange(undefined); // Clear custom range
-                }}
-                hasCustomRange={!!dateRange}
-                className="w-[120px]"
-              />
-            </div>
-
-            <div className="h-4 w-px bg-border" />
-
-            {/* Custom Date Range Picker */}
-            <DateRangePicker
-              value={dateRange}
-              onValueChange={(range) => {
-                setDateRange(range);
-                setDateFilter(''); // Clear preset when using custom range
-              }}
-              className="w-[200px]"
-              placeholder="Custom range"
+      {/* Unified Toolbar */}
+      <div className="bg-muted/50 border rounded-lg p-3 space-y-3">
+        {/* Top row: filters + actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {/* Filters */}
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3 flex-1">
+            <StatusFilterCombobox
+              value={filter}
+              onValueChange={(status) => setFilter(status)}
+              className="w-full sm:w-[140px]"
             />
+            <DateFilterCombobox
+              value={dateFilter}
+              onValueChange={(value) => {
+                setDateFilter(value);
+                setDateRange(undefined);
+              }}
+              hasCustomRange={!!dateRange}
+              className="w-full sm:w-[130px]"
+            />
+            <div className="col-span-2 sm:col-span-1">
+              <DateRangePicker
+                value={dateRange}
+                onValueChange={(range) => {
+                  setDateRange(range);
+                  setDateFilter('');
+                }}
+                className="w-full sm:w-[200px]"
+                placeholder="Custom range"
+              />
+            </div>
           </div>
 
-          {/* Right side - Clear and Info */}
-          <div className="flex items-center gap-3">
-            {/* Job Count */}
-            <span className="text-sm text-muted-foreground">
+          {/* Actions */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-muted-foreground hidden sm:inline">
               {filter === 'ALL' ? jobs.length : jobs.filter(job => job.status === filter).length} jobs
             </span>
 
-            {/* Clear Filters */}
             {(filter !== 'ALL' || dateFilter || dateRange || showNoAIAnalysisOnly) && (
               <button
                 onClick={() => {
@@ -218,48 +218,104 @@ export function JobList({ jobs, onEdit, onDelete, onDuplicate, onStatusChange, o
                 className="px-2 py-1 text-xs rounded-md bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors flex items-center gap-1"
               >
                 <X className="h-3 w-3" />
-                Clear All
+                Reset
               </button>
+            )}
+
+            {!readOnly && (
+              <>
+                {(onBatchAnalyze || onArchiveRejected || onClearAll) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8">
+                        <Settings className="h-3.5 w-3.5 sm:mr-1.5" />
+                        <span className="hidden sm:inline">Actions</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      {onBatchAnalyze && unanalyzedCount > 0 && (
+                        <DropdownMenuItem
+                          onClick={onBatchAnalyze}
+                          disabled={loadingOperation === 'batch-analyze'}
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          {loadingOperation === 'batch-analyze'
+                            ? 'Analyzing...'
+                            : `Analyze All (${unanalyzedCount})`}
+                        </DropdownMenuItem>
+                      )}
+                      {onArchiveRejected && rejectedCount > 0 && (
+                        <DropdownMenuItem
+                          onClick={onArchiveRejected}
+                          disabled={loadingOperation === 'archive-rejected'}
+                        >
+                          <Archive className="h-4 w-4 mr-2" />
+                          {loadingOperation === 'archive-rejected'
+                            ? 'Archiving...'
+                            : `Archive Rejected (${rejectedCount})`}
+                        </DropdownMenuItem>
+                      )}
+                      {(onBatchAnalyze || onArchiveRejected) && onClearAll && jobs.length > 0 && (
+                        <DropdownMenuSeparator />
+                      )}
+                      {onClearAll && jobs.length > 0 && (
+                        <DropdownMenuItem
+                          onClick={onClearAll}
+                          disabled={loadingOperation === 'clear-all'}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          {loadingOperation === 'clear-all' ? 'Clearing...' : 'Clear All Jobs'}
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
+                <Link href="/jobs/new">
+                  <Button size="sm" className="h-8">
+                    <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Add Job</span>
+                  </Button>
+                </Link>
+              </>
             )}
           </div>
         </div>
 
-      </div>
-
-      {/* Search Input */}
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-4 w-4 text-muted-foreground" />
+        {/* Search row */}
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <Input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by company, job title, or date..."
+            className="pl-10 h-8 text-sm"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+            >
+              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            </button>
+          )}
         </div>
-        <Input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by company, job title, or date..."
-          className="pl-10"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center"
-          >
-            <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-          </button>
-        )}
-      </div>
 
-      {/* Secondary Filter - No AI Analysis */}
-      <div className="flex items-center gap-2">
-        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+        {/* AI filter toggle */}
+        <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
           <input
             type="checkbox"
             checked={showNoAIAnalysisOnly}
             onChange={(e) => setShowNoAIAnalysisOnly(e.target.checked)}
             className="rounded border-input"
           />
-          Show only jobs not analyzed by AI
+          Unanalyzed only
           {showNoAIAnalysisOnly && (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs">
               ({jobs.filter(job => {
                 const matchesStatus = filter === 'ALL' || job.status === filter;
                 const hasNoAIAnalysis = !job.aiAnalyzedAt;
