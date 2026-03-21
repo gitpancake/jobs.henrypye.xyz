@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Job, JobStatus } from '@/lib/types';
 import { Pencil, Trash2, Copy, ExternalLink, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
@@ -39,10 +40,21 @@ export const JobCard = memo(function JobCard({
   readOnly = false
 }: JobCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const router = useRouter();
   const hasAIAnalysis = job.aiAnalyzedAt && (job.suitabilityReason || job.requirements?.length > 0 || job.responsibilities?.length > 0 || job.benefits?.length > 0 || job.suggestedNextSteps?.length > 0);
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, select, input, [role="combobox"], [data-slot="popover"]')) return;
+    router.push(`/jobs/${job.id}`);
+  };
+
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card
+      className="hover:shadow-md hover:border-primary/30 transition-all cursor-pointer"
+      onClick={handleCardClick}
+    >
       <CardContent className="p-4">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="flex-1 min-w-0">
