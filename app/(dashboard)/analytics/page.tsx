@@ -4,7 +4,29 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { TrendingUp, TrendingDown, Briefcase, Clock, CheckCircle, XCircle, Calendar, Target } from "lucide-react";
+import { TrendingUp, TrendingDown, Briefcase, Clock, CheckCircle, Calendar, Target, Send, MessageCircle } from "lucide-react";
+
+const METHOD_LABELS: Record<string, string> = {
+  LINKEDIN: 'LinkedIn',
+  PHONE: 'Phone',
+  TEXT: 'Text',
+  WHATSAPP: 'WhatsApp',
+  TELEGRAM: 'Telegram',
+  IN_PERSON: 'In Person',
+  EMAIL: 'Email',
+  OTHER: 'Other',
+};
+
+const METHOD_COLORS: Record<string, string> = {
+  LINKEDIN: '#3b82f6',
+  PHONE: '#10b981',
+  TEXT: '#a855f7',
+  WHATSAPP: '#059669',
+  TELEGRAM: '#0ea5e9',
+  IN_PERSON: '#f59e0b',
+  EMAIL: '#6366f1',
+  OTHER: '#6b7280',
+};
 
 interface Stats {
   total: number;
@@ -31,7 +53,15 @@ interface JobAnalytics {
   monthlyTrends: JobTrend[];
 }
 
-const COLORS = {
+interface OutreachStats {
+  total: number;
+  responded: number;
+  responseRate: number;
+  byMethod: { method: string; count: number }[];
+  monthlyTrends: { month: string; total: number; responded: number }[];
+}
+
+const JOB_COLORS = {
   applied: '#3b82f6',
   interviewing: '#f59e0b',
   accepted: '#10b981',
@@ -41,23 +71,21 @@ const COLORS = {
 export default function AnalyticsPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [analytics, setAnalytics] = useState<JobAnalytics | null>(null);
+  const [outreachStats, setOutreachStats] = useState<OutreachStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [statsResponse, analyticsResponse] = await Promise.all([
+        const [statsRes, analyticsRes, outreachRes] = await Promise.all([
           fetch('/api/jobs/stats'),
-          fetch('/api/jobs/analytics')
+          fetch('/api/jobs/analytics'),
+          fetch('/api/outreach/stats'),
         ]);
 
-        if (statsResponse.ok) {
-          setStats(await statsResponse.json());
-        }
-
-        if (analyticsResponse.ok) {
-          setAnalytics(await analyticsResponse.json());
-        }
+        if (statsRes.ok) setStats(await statsRes.json());
+        if (analyticsRes.ok) setAnalytics(await analyticsRes.json());
+        if (outreachRes.ok) setOutreachStats(await outreachRes.json());
       } catch (error) {
         console.error('Failed to fetch analytics:', error);
       } finally {
@@ -90,11 +118,19 @@ export default function AnalyticsPage() {
   }
 
   const pieData = stats ? [
-    { name: 'Applied', value: stats.applied, color: COLORS.applied },
-    { name: 'Interviewing', value: stats.interviewing, color: COLORS.interviewing },
-    { name: 'Accepted', value: stats.accepted, color: COLORS.accepted },
-    { name: 'Rejected', value: stats.rejected, color: COLORS.rejected }
+    { name: 'Applied', value: stats.applied, color: JOB_COLORS.applied },
+    { name: 'Interviewing', value: stats.interviewing, color: JOB_COLORS.interviewing },
+    { name: 'Accepted', value: stats.accepted, color: JOB_COLORS.accepted },
+    { name: 'Rejected', value: stats.rejected, color: JOB_COLORS.rejected }
   ].filter(item => item.value > 0) : [];
+
+  const outreachPieData = outreachStats?.byMethod
+    .filter((m) => m.count > 0)
+    .map((m) => ({
+      name: METHOD_LABELS[m.method] || m.method,
+      value: m.count,
+      color: METHOD_COLORS[m.method] || '#6b7280',
+    })) || [];
 
   return (
     <div className="space-y-8">
@@ -105,57 +141,80 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Key Metrics */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Applications</p>
-                  <p className="text-3xl font-bold text-foreground">{stats.total}</p>
-                </div>
-                <Briefcase className="h-8 w-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
+      {(stats || outreachStats) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          {stats && (
+            <>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Applications</p>
+                      <p className="text-3xl font-bold text-foreground">{stats.total}</p>
+                    </div>
+                    <Briefcase className="h-8 w-8 text-primary" />
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active Interviews</p>
-                  <p className="text-3xl font-bold text-foreground">{stats.interviewing}</p>
-                </div>
-                <Clock className="h-8 w-8 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Interviews</p>
+                      <p className="text-3xl font-bold text-foreground">{stats.interviewing}</p>
+                    </div>
+                    <Clock className="h-8 w-8 text-yellow-500" />
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Offers Received</p>
-                  <p className="text-3xl font-bold text-foreground">{stats.accepted}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Offers</p>
+                      <p className="text-3xl font-bold text-foreground">{stats.accepted}</p>
+                    </div>
+                    <CheckCircle className="h-8 w-8 text-green-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
-                  <p className="text-3xl font-bold text-foreground">
-                    {stats.total > 0 ? ((stats.accepted / stats.total) * 100).toFixed(1) : '0.0'}%
-                  </p>
-                </div>
-                <Target className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
+          {outreachStats && (
+            <>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Outreach Sent</p>
+                      <p className="text-3xl font-bold text-foreground">{outreachStats.total}</p>
+                    </div>
+                    <Send className="h-8 w-8 text-indigo-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Outreach Replies</p>
+                      <p className="text-3xl font-bold text-foreground">
+                        {outreachStats.responded}
+                        <span className="text-lg text-muted-foreground font-normal ml-1">
+                          ({outreachStats.responseRate.toFixed(0)}%)
+                        </span>
+                      </p>
+                    </div>
+                    <MessageCircle className="h-8 w-8 text-green-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
       )}
 
@@ -178,10 +237,10 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="month" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="applied" fill={COLORS.applied} name="Applied" />
-                    <Bar dataKey="interviewing" fill={COLORS.interviewing} name="Interviewing" />
-                    <Bar dataKey="accepted" fill={COLORS.accepted} name="Accepted" />
-                    <Bar dataKey="rejected" fill={COLORS.rejected} name="Rejected" />
+                    <Bar dataKey="applied" fill={JOB_COLORS.applied} name="Applied" />
+                    <Bar dataKey="interviewing" fill={JOB_COLORS.interviewing} name="Interviewing" />
+                    <Bar dataKey="accepted" fill={JOB_COLORS.accepted} name="Accepted" />
+                    <Bar dataKey="rejected" fill={JOB_COLORS.rejected} name="Rejected" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -235,6 +294,76 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Outreach Section */}
+      {outreachStats && outreachStats.total > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Outreach Trends */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Send className="h-5 w-5" />
+                Outreach Over Time
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {outreachStats.monthlyTrends.length > 0 ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={outreachStats.monthlyTrends}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="total" fill="#6366f1" name="Sent" />
+                      <Bar dataKey="responded" fill="#10b981" name="Responded" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-80 flex items-center justify-center text-muted-foreground">
+                  <p>No outreach data yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Outreach by Method */}
+          <Card>
+            <CardHeader>
+              <CardTitle>By Method</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {outreachPieData.length > 0 ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={outreachPieData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
+                      >
+                        {outreachPieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-80 flex items-center justify-center text-muted-foreground">
+                  <p>No outreach data yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Performance Metrics */}
       {analytics && (
