@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, TrendingDown, Briefcase, Clock, CheckCircle, Calendar, Target, Send, MessageCircle } from "lucide-react";
+
+type Granularity = "day" | "week" | "month";
 
 const METHOD_LABELS: Record<string, string> = {
   LINKEDIN: 'LinkedIn',
@@ -73,14 +76,24 @@ export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<JobAnalytics | null>(null);
   const [outreachStats, setOutreachStats] = useState<OutreachStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [granularity, setGranularity] = useState<Granularity>("month");
+
+  const fetchTrends = useCallback(async (g: Granularity) => {
+    const [analyticsRes, outreachRes] = await Promise.all([
+      fetch(`/api/jobs/analytics?granularity=${g}`),
+      fetch(`/api/outreach/stats?granularity=${g}`),
+    ]);
+    if (analyticsRes.ok) setAnalytics(await analyticsRes.json());
+    if (outreachRes.ok) setOutreachStats(await outreachRes.json());
+  }, []);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         const [statsRes, analyticsRes, outreachRes] = await Promise.all([
           fetch('/api/jobs/stats'),
-          fetch('/api/jobs/analytics'),
-          fetch('/api/outreach/stats'),
+          fetch(`/api/jobs/analytics?granularity=${granularity}`),
+          fetch(`/api/outreach/stats?granularity=${granularity}`),
         ]);
 
         if (statsRes.ok) setStats(await statsRes.json());
@@ -94,7 +107,14 @@ export default function AnalyticsPage() {
     };
 
     fetchAnalytics();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleGranularityChange = useCallback((value: string) => {
+    if (!value) return;
+    const g = value as Granularity;
+    setGranularity(g);
+    fetchTrends(g);
+  }, [fetchTrends]);
 
   if (isLoading) {
     return (
@@ -222,11 +242,21 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Monthly Trends Chart */}
         <Card className="lg:col-span-2">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Application Trends Over Time
+              Application Trends
             </CardTitle>
+            <ToggleGroup
+              type="single"
+              value={granularity}
+              onValueChange={handleGranularityChange}
+              size="sm"
+            >
+              <ToggleGroupItem value="day" className="text-xs px-2.5">Day</ToggleGroupItem>
+              <ToggleGroupItem value="week" className="text-xs px-2.5">Week</ToggleGroupItem>
+              <ToggleGroupItem value="month" className="text-xs px-2.5">Month</ToggleGroupItem>
+            </ToggleGroup>
           </CardHeader>
           <CardContent>
             {analytics?.monthlyTrends && analytics.monthlyTrends.length > 0 ? (
@@ -234,7 +264,14 @@ export default function AnalyticsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics.monthlyTrends}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
+                    <XAxis
+                      dataKey="month"
+                      angle={granularity === 'day' ? -45 : 0}
+                      textAnchor={granularity === 'day' ? 'end' : 'middle'}
+                      height={granularity === 'day' ? 60 : 30}
+                      tick={{ fontSize: granularity === 'day' ? 10 : 12 }}
+                      interval={granularity === 'day' ? 2 : 0}
+                    />
                     <YAxis />
                     <Tooltip />
                     <Bar dataKey="applied" fill={JOB_COLORS.applied} name="Applied" />
@@ -300,11 +337,21 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Outreach Trends */}
           <Card className="lg:col-span-2">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="flex items-center gap-2">
                 <Send className="h-5 w-5" />
-                Outreach Over Time
+                Outreach Trends
               </CardTitle>
+              <ToggleGroup
+                type="single"
+                value={granularity}
+                onValueChange={handleGranularityChange}
+                size="sm"
+              >
+                <ToggleGroupItem value="day" className="text-xs px-2.5">Day</ToggleGroupItem>
+                <ToggleGroupItem value="week" className="text-xs px-2.5">Week</ToggleGroupItem>
+                <ToggleGroupItem value="month" className="text-xs px-2.5">Month</ToggleGroupItem>
+              </ToggleGroup>
             </CardHeader>
             <CardContent>
               {outreachStats.monthlyTrends.length > 0 ? (
@@ -312,7 +359,14 @@ export default function AnalyticsPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={outreachStats.monthlyTrends}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
+                      <XAxis
+                        dataKey="month"
+                        angle={granularity === 'day' ? -45 : 0}
+                        textAnchor={granularity === 'day' ? 'end' : 'middle'}
+                        height={granularity === 'day' ? 60 : 30}
+                        tick={{ fontSize: granularity === 'day' ? 10 : 12 }}
+                        interval={granularity === 'day' ? 2 : 0}
+                      />
                       <YAxis />
                       <Tooltip />
                       <Bar dataKey="total" fill="#6366f1" name="Sent" />

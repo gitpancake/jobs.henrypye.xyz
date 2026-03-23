@@ -106,7 +106,7 @@ export async function getJobStats(teamId: string) {
   };
 }
 
-export async function getJobAnalytics(teamId: string) {
+export async function getJobAnalytics(teamId: string, granularity: 'day' | 'week' | 'month' = 'month') {
   // Get all jobs for analysis
   const jobs = await prisma.job.findMany({
     where: { teamId, archived: false },
@@ -125,31 +125,56 @@ export async function getJobAnalytics(teamId: string) {
   // Calculate average response time (simplified - assumes all jobs get responses)
   const averageResponseTime = 7; // Placeholder - would need interview/response dates in real implementation
 
-  // Get monthly trends
+  // Get trends based on granularity
   const now = new Date();
-  const monthlyData: { [key: string]: { applied: number; interviewing: number; accepted: number; rejected: number } } = {};
-  
-  // Initialize last 12 months
-  for (let i = 11; i >= 0; i--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-    monthlyData[monthKey] = { applied: 0, interviewing: 0, accepted: 0, rejected: 0 };
+  const trendData: { [key: string]: { applied: number; interviewing: number; accepted: number; rejected: number } } = {};
+
+  function getDateKey(date: Date): string {
+    if (granularity === 'day') {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } else if (granularity === 'week') {
+      // Start of week (Monday)
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      d.setDate(diff);
+      return `W ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+    }
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
   }
 
-  // Aggregate jobs by month
+  // Initialize time buckets based on granularity
+  if (granularity === 'day') {
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      trendData[getDateKey(date)] = { applied: 0, interviewing: 0, accepted: 0, rejected: 0 };
+    }
+  } else if (granularity === 'week') {
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 7);
+      trendData[getDateKey(date)] = { applied: 0, interviewing: 0, accepted: 0, rejected: 0 };
+    }
+  } else {
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      trendData[getDateKey(date)] = { applied: 0, interviewing: 0, accepted: 0, rejected: 0 };
+    }
+  }
+
+  // Aggregate jobs into buckets
   jobs.forEach(job => {
     const applicationDate = new Date(job.applicationDate);
-    const monthKey = applicationDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-    
-    if (monthlyData[monthKey]) {
-      if (job.status === 'APPLIED') monthlyData[monthKey].applied++;
-      else if (job.status === 'INTERVIEWING') monthlyData[monthKey].interviewing++;
-      else if (job.status === 'ACCEPTED') monthlyData[monthKey].accepted++;
-      else if (job.status === 'REJECTED') monthlyData[monthKey].rejected++;
+    const key = getDateKey(applicationDate);
+
+    if (trendData[key]) {
+      if (job.status === 'APPLIED') trendData[key].applied++;
+      else if (job.status === 'INTERVIEWING') trendData[key].interviewing++;
+      else if (job.status === 'ACCEPTED') trendData[key].accepted++;
+      else if (job.status === 'REJECTED') trendData[key].rejected++;
     }
   });
 
-  const monthlyTrends = Object.entries(monthlyData).map(([month, data]) => ({
+  const monthlyTrends = Object.entries(trendData).map(([month, data]) => ({
     month,
     ...data
   }));

@@ -4,7 +4,9 @@ import { getJobAnalytics } from '@/lib/jobs';
 
 async function handler(request: Request, { session }: { session: { activeTeamId: string } }) {
   try {
-    const analytics = await getJobAnalytics(session.activeTeamId);
+    const { searchParams } = new URL(request.url);
+    const granularity = (searchParams.get('granularity') || 'month') as 'day' | 'week' | 'month';
+    const analytics = await getJobAnalytics(session.activeTeamId, granularity);
     return NextResponse.json(analytics);
   } catch (error) {
     console.error('Analytics fetch error:', error);
