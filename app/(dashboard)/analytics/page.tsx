@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { TrendingUp, TrendingDown, Briefcase, Clock, CheckCircle, Calendar, Target, Send, MessageCircle } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { TrendingUp, TrendingDown, Briefcase, Clock, CheckCircle, Calendar, Target, Send, MessageCircle, Activity } from "lucide-react";
 
 type Granularity = "day" | "week" | "month";
 
@@ -237,6 +237,74 @@ export default function AnalyticsPage() {
           )}
         </div>
       )}
+
+      {/* Combined Activity Chart */}
+      {(analytics?.monthlyTrends || outreachStats?.monthlyTrends) && (() => {
+        const jobMap = new Map(
+          (analytics?.monthlyTrends || []).map(t => [
+            t.month,
+            t.applied + t.interviewing + t.accepted + t.rejected,
+          ])
+        );
+        const outreachMap = new Map(
+          (outreachStats?.monthlyTrends || []).map(t => [t.month, t])
+        );
+        const allKeys = Array.from(
+          new Set([...jobMap.keys(), ...outreachMap.keys()])
+        );
+        // Preserve insertion order from the larger set (both are already sorted)
+        const combinedData = allKeys.map(key => ({
+          month: key,
+          applications: jobMap.get(key) || 0,
+          outreachSent: outreachMap.get(key)?.total || 0,
+          outreachReplied: outreachMap.get(key)?.responded || 0,
+        }));
+        const hasData = combinedData.some(d => d.applications > 0 || d.outreachSent > 0);
+
+        return hasData ? (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Total Activity
+              </CardTitle>
+              <ToggleGroup
+                type="single"
+                value={granularity}
+                onValueChange={handleGranularityChange}
+                size="sm"
+              >
+                <ToggleGroupItem value="day" className="text-xs px-2.5">Day</ToggleGroupItem>
+                <ToggleGroupItem value="week" className="text-xs px-2.5">Week</ToggleGroupItem>
+                <ToggleGroupItem value="month" className="text-xs px-2.5">Month</ToggleGroupItem>
+              </ToggleGroup>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={combinedData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="month"
+                      angle={granularity === 'day' ? -45 : 0}
+                      textAnchor={granularity === 'day' ? 'end' : 'middle'}
+                      height={granularity === 'day' ? 60 : 30}
+                      tick={{ fontSize: granularity === 'day' ? 10 : 12 }}
+                      interval={granularity === 'day' ? 2 : 0}
+                    />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="applications" fill="#3b82f6" name="Applications" />
+                    <Bar dataKey="outreachSent" fill="#6366f1" name="Outreach Sent" />
+                    <Bar dataKey="outreachReplied" fill="#10b981" name="Outreach Replied" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null;
+      })()}
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
