@@ -31,7 +31,7 @@ export function JobForm({ onSubmit, initialData, isSubmitting = false }: JobForm
       company: initialData?.company || '',
       description: initialData?.description || '',
       location: initialData?.location || '',
-      applicationDate: initialData?.applicationDate || new Date(),
+      applicationDate: initialData?.applicationDate ? new Date(initialData.applicationDate) : new Date(),
       linkedinContactUrl: initialData?.linkedinContactUrl || '',
       linkedinContactName: initialData?.linkedinContactName || '',
       hasMessagedContact: initialData?.hasMessagedContact || false,
