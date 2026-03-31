@@ -145,9 +145,9 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       >
         <Sidebar>
           <SidebarHeader className="px-3 pt-4 pb-2">
-            <h1 className="font-mono text-sm font-bold text-sidebar-primary tracking-tight px-2 mb-1">
-              jobs.
-            </h1>
+            <Link href="/" className="font-mono text-sm font-bold text-sidebar-primary tracking-tight px-2 mb-1 hover:opacity-80 transition-opacity">
+              jobs<span className="text-blue-500">.</span>
+            </Link>
             {teams.length > 1 && activeTeam && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -263,6 +263,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               <SidebarTrigger className="-ml-1">
                 <PanelLeft className="h-5 w-5" />
               </SidebarTrigger>
+              <Separator orientation="vertical" className="h-4 hidden sm:block" />
+              <Link href="/" className="hidden sm:flex items-center gap-0.5">
+                <span className="font-mono text-sm font-bold tracking-tight">jobs</span>
+                <span className="font-mono text-sm font-bold text-blue-500">.</span>
+              </Link>
             </div>
             <div className="flex items-center gap-1">
               <ThemeTogglerButton

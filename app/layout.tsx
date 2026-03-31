@@ -15,8 +15,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Job Tracker",
-  description: "Track your job applications and manage your career journey",
+  title: {
+    default: "jobs. — Job Application Tracker",
+    template: "%s | jobs.",
+  },
+  description:
+    "Track applications. Land interviews. Get hired. A modern job search tracker with AI-powered analysis.",
+  metadataBase: new URL("https://jobs.henrypye.xyz"),
+  openGraph: {
+    title: "jobs. — Job Application Tracker",
+    description:
+      "Track applications. Land interviews. Get hired. A modern job search tracker with AI-powered analysis.",
+    siteName: "jobs.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "jobs. — Job Application Tracker",
+    description:
+      "Track applications. Land interviews. Get hired. A modern job search tracker with AI-powered analysis.",
+  },
 };
 
 export default function RootLayout({
