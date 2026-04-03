@@ -9,13 +9,11 @@ import { CreateJobFormData } from "@/lib/validations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/animate-ui/components/buttons/button";
 import { Fade } from "@/components/animate-ui/primitives/effects/fade";
-import { useDashboard } from "@/lib/dashboard-context";
 
 export default function NewJobPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { refreshStats } = useDashboard();
 
   const handleSubmit = useCallback(
     async (data: CreateJobFormData) => {
@@ -28,15 +26,15 @@ export default function NewJobPage() {
           body: JSON.stringify(data),
         });
         if (!response.ok) throw new Error("Failed to create job");
-        await refreshStats();
-        router.push("/");
+        const job = await response.json();
+        router.push(`/jobs/${job.id}`);
       } catch {
         setError("Failed to create job. Please try again.");
       } finally {
         setIsSubmitting(false);
       }
     },
-    [router, refreshStats],
+    [router],
   );
 
   return (

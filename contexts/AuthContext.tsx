@@ -5,9 +5,10 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   type ReactNode,
 } from "react";
-import { signOut } from "firebase/auth";
+import { signOut, onIdTokenChanged } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 
 export type TeamRole = "owner" | "collaborator" | "viewer";
@@ -38,6 +39,24 @@ export function AuthProvider({
   children: ReactNode;
 }) {
   const [user, setUser] = useState<AuthUser>(initialUser);
+
+  // Keep the server-side session cookie in sync with Firebase's auto-refreshed tokens.
+  // Firebase client SDK refreshes ID tokens every ~55 minutes; this listener
+  // re-POSTs the fresh token to /api/auth so the cookie never goes stale.
+  useEffect(() => {
+    const auth = getFirebaseAuth();
+    const unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const idToken = await firebaseUser.getIdToken();
+        await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken }),
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const refreshUser = useCallback(async () => {
     const res = await fetch("/api/auth");
